@@ -1,0 +1,202 @@
+[
+  {
+    "id": 1,
+    "domain": "Software Engineering",
+    "share": 14.5,
+    "minStipend": 400,
+    "maxStipend": 800,
+    "workModel": "Hybrid / Remote",
+    "location": "BKK / ปริมณฑล",
+    "skills": "React, Node.js, Git, Problem Solving"
+  },
+  {
+    "id": 2,
+    "domain": "Data & Analytics",
+    "share": 10.2,
+    "minStipend": 350,
+    "maxStipend": 700,
+    "workModel": "Hybrid",
+    "location": "BKK",
+    "skills": "Python, SQL, Power BI, Analytical Thinking"
+  },
+  {
+    "id": 3,
+    "domain": "Digital Marketing",
+    "share": 9.8,
+    "minStipend": 300,
+    "maxStipend": 500,
+    "workModel": "On-site / Hybrid",
+    "location": "BKK, เชียงใหม่",
+    "skills": "SEO, Facebook Ads, Google Analytics, Creativity"
+  },
+  {
+    "id": 4,
+    "domain": "UI/UX Design",
+    "share": 6.5,
+    "minStipend": 350,
+    "maxStipend": 600,
+    "workModel": "Hybrid / Remote",
+    "location": "BKK",
+    "skills": "Figma, Wireframing, User Research, Communication"
+  },
+  {
+    "id": 5,
+    "domain": "Graphic Design",
+    "share": 6.2,
+    "minStipend": 300,
+    "maxStipend": 500,
+    "workModel": "On-site / Hybrid",
+    "location": "BKK, ชลบุรี",
+    "skills": "Photoshop, Illustrator, Canva, Time Management"
+  },
+  {
+    "id": 6,
+    "domain": "Business Development",
+    "share": 5.8,
+    "minStipend": 300,
+    "maxStipend": 500,
+    "workModel": "On-site",
+    "location": "BKK",
+    "skills": "Lead Generation, Market Research, Negotiation"
+  },
+  {
+    "id": 7,
+    "domain": "Finance & Accounting",
+    "share": 5.5,
+    "minStipend": 300,
+    "maxStipend": 450,
+    "workModel": "On-site",
+    "location": "BKK, ระยอง",
+    "skills": "Excel (Advanced), Accounting Principles, Detail-Oriented"
+  },
+  {
+    "id": 8,
+    "domain": "Content Creator",
+    "share": 5.1,
+    "minStipend": 300,
+    "maxStipend": 450,
+    "workModel": "Hybrid",
+    "location": "BKK, เชียงใหม่",
+    "skills": "Copywriting, Video Shooting, Social Trends"
+  },
+  {
+    "id": 9,
+    "domain": "Human Resources (HR)",
+    "share": 4.8,
+    "minStipend": 300,
+    "maxStipend": 400,
+    "workModel": "On-site",
+    "location": "BKK, ชลบุรี",
+    "skills": "Recruitment, Coordination, Active Listening"
+  },
+  {
+    "id": 10,
+    "domain": "Operations",
+    "share": 4.2,
+    "minStipend": 300,
+    "maxStipend": 400,
+    "workModel": "On-site",
+    "location": "BKK, สมุทรปราการ",
+    "skills": "Process Optimization, Admin, Adaptability"
+  },
+  {
+    "id": 11,
+    "domain": "E-Commerce",
+    "share": 3.9,
+    "minStipend": 300,
+    "maxStipend": 500,
+    "workModel": "Hybrid",
+    "location": "BKK",
+    "skills": "Shopee/Lazada Admin, Live Streaming, Data Tracking"
+  },
+  {
+    "id": 12,
+    "domain": "Sales",
+    "share": 3.5,
+    "minStipend": 300,
+    "maxStipend": 450,
+    "workModel": "On-site",
+    "location": "ทุกภูมิภาค",
+    "skills": "Pitching, Interpersonal Skills, Resilience"
+  },
+  {
+    "id": 13,
+    "domain": "Video Editing",
+    "share": 3.2,
+    "minStipend": 300,
+    "maxStipend": 500,
+    "workModel": "Remote / Hybrid",
+    "location": "BKK",
+    "skills": "Premiere Pro, After Effects, Storytelling"
+  },
+  {
+    "id": 14,
+    "domain": "Logistics & Supply Chain",
+    "share": 3,
+    "minStipend": 300,
+    "maxStipend": 450,
+    "workModel": "On-site",
+    "location": "ชลบุรี, ระยอง, BKK",
+    "skills": "Inventory Mgmt, ERP basics, Teamwork"
+  },
+  {
+    "id": 15,
+    "domain": "PR & Communications",
+    "share": 2.8,
+    "minStipend": 300,
+    "maxStipend": 450,
+    "workModel": "Hybrid",
+    "location": "BKK",
+    "skills": "Press Release Writing, Media Relations"
+  },
+  {
+    "id": 16,
+    "domain": "Customer Success",
+    "share": 2.5,
+    "minStipend": 300,
+    "maxStipend": 400,
+    "workModel": "On-site / Remote",
+    "location": "BKK",
+    "skills": "Empathy, CRM Tools, Conflict Resolution"
+  },
+  {
+    "id": 17,
+    "domain": "Research & Development (R&D)",
+    "share": 2.2,
+    "minStipend": 350,
+    "maxStipend": 600,
+    "workModel": "On-site",
+    "location": "ระยอง, ปทุมธานี",
+    "skills": "Lab Techniques, Data Analysis, Critical Thinking"
+  },
+  {
+    "id": 18,
+    "domain": "Hospitality & Tourism",
+    "share": 2.1,
+    "minStipend": 250,
+    "maxStipend": 400,
+    "workModel": "On-site",
+    "location": "ภูเก็ต, เชียงใหม่, BKK",
+    "skills": "English Fluency, Service Mind, Multitasking"
+  },
+  {
+    "id": 19,
+    "domain": "Architecture & Interior",
+    "share": 2.2,
+    "minStipend": 300,
+    "maxStipend": 500,
+    "workModel": "On-site",
+    "location": "BKK, เชียงใหม่",
+    "skills": "AutoCAD, SketchUp, Revit, Spatial Design"
+  },
+  {
+    "id": 20,
+    "domain": "Legal",
+    "share": 2,
+    "minStipend": 300,
+    "maxStipend": 500,
+    "workModel": "On-site",
+    "location": "BKK",
+    "skills": "Contract Drafting, Legal Research, Accuracy"
+  }
+]
