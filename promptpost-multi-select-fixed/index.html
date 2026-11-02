@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แบบสอบถามพฤติกรรมการจัดการเอกสารคนรุ่นใหม่ | Prompt Post</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📮</text></svg>">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header with Prompt Post Branding & Admin Access on Top-Right -->
+    <header class="brand-header">
+      <div class="brand-logo-wrap">
+        <div class="logo-badge">P</div>
+        <div class="brand-title">
+          <h1>Prompt Post</h1>
+          <span>Document Less, Live More</span>
+        </div>
+      </div>
+      <button type="button" class="admin-top-btn" onclick="openAdminModal()">
+        <span>🔒 ผู้ดูแลระบบ</span>
+      </button>
+    </header>
+
+    <!-- Introductory Hero Section -->
+    <div class="hero-card" id="hero-banner">
+      <span class="hero-tag">สำรวจความคิดเห็นคนรุ่นใหม่</span>
+      <h2>พฤติกรรมการใช้ชีวิตและจัดการเอกสารสำคัญในยุคดิจิทัล</h2>
+      <p>ร่วมแชร์ประสบการณ์เพื่อนำไปพัฒนาบริการ <strong>Prompt Post (ไปรษณีย์ไทย)</strong> ให้ตอบโจทย์ชีวิตนักศึกษาและคนเริ่มทำงาน ใช้เวลาตอบเพียง <strong>1–2 นาที</strong></p>
+      <div class="privacy-notice">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 4 10 8 10z"></path>
+        </svg>
+        <span><strong>เป็นความลับ 100%</strong> ตามหลัก PDPA: ไม่มีการเก็บ Gmail, ชื่อ-นามสกุล หรือข้อมูลส่วนตัวใดๆ</span>
+      </div>
+    </div>
+
+    <!-- Progress Tracker -->
+    <div class="progress-wrapper" id="progress-wrapper">
+      <div class="progress-info">
+        <span id="step-label">ส่วนที่ 1 จาก 9: Screening & Demographics</span>
+        <span id="step-percent">11%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Survey Form Container -->
+    <form id="survey-form">
+
+      <!-- ==========================================
+           ส่วนที่ 1: Screening & Demographics
+           ========================================== -->
+      <div class="card survey-step" data-step="1">
+        <span class="q-badge">ส่วนที่ 1 / 9</span>
+        <h3 class="q-title">Screening & Demographics</h3>
+        <p class="q-subtitle">กรุณาตอบคำถามเพื่อคัดกรองกลุ่มเป้าหมาย</p>
+
+        <!-- ข้อ 1.1 อายุ -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">1. ปัจจุบันท่านมีอายุเท่าใด? *</p>
+          <div class="options-list" data-name="ageGroup" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)" data-terminate="true">
+              <div class="option-radio"></div>
+              <div class="option-text">น้อยกว่า 21 ปี (Terminate/จบการสำรวจ)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">21 – 23 ปี</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">24 – 25 ปี</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)" data-terminate="true">
+              <div class="option-radio"></div>
+              <div class="option-text">มากกว่า 25 ปี (Terminate/จบการสำรวจ)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 1.2 สถานภาพ -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">2. สถานภาพปัจจุบันของท่านตรงกับข้อใดมากที่สุด? *</p>
+          <div class="options-list" data-name="status" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">นักศึกษาที่กำลังฝึกงาน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">นักศึกษาปีสุดท้าย (กำลังจะสำเร็จการศึกษา)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">เพิ่งเริ่มทำงาน/บัณฑิตจบใหม่ (ทำงานไม่เกิน 1 ปี)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)" data-terminate="true">
+              <div class="option-radio"></div>
+              <div class="option-text">ทำงานมาแล้วมากกว่า 1 ปี (Terminate/จบการสำรวจ)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this, true)">
+              <div class="option-radio"></div>
+              <div style="flex-grow:1;">
+                <div class="option-text">อื่นๆ (ระบุ)</div>
+                <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="status-other" placeholder="โปรดระบุสถานภาพของคุณ" onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 1.3 รูปแบบการอยู่อาศัย -->
+        <div>
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">3. รูปแบบการอยู่อาศัยในปัจจุบันของท่านคือข้อใด? *</p>
+          <div class="options-list" data-name="livingType" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">พักอาศัยกับครอบครัว</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">เช่าหอพัก / คอนโดมิเนียม</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">บ้านส่วนตัว / คอนโดส่วนตัว</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this, true)">
+              <div class="option-radio"></div>
+              <div style="flex-grow:1;">
+                <div class="option-text">อื่นๆ (ระบุ)</div>
+                <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="living-other" placeholder="โปรดระบุที่อยู่อาศัย" onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-primary" onclick="handleStep1Next()">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+
+      <!-- ==========================================
+           ส่วนที่ 2: Behavior & Pain Points
+           ========================================== -->
+      <div class="card survey-step" data-step="2" style="display: none;">
+        <span class="q-badge">ส่วนที่ 2 / 9</span>
+        <h3 class="q-title">Behavior & Pain Points</h3>
+        <p class="q-subtitle">สำรวจพฤติกรรมและความยุ่งยากเดิมจากการจัดการเอกสาร</p>
+
+        <!-- ข้อ 2.1 -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 6px;">1. ในช่วงสมัครงาน หรือเริ่มต้นทำงาน ท่านพบความยุ่งยากในการจัดการ "เอกสารประเภทใด" มากที่สุด? *</p>
+          <p class="q-subtitle" style="margin-bottom: 10px;">(เลือกได้มากกว่า 1 ข้อ)</p>
+          <div class="options-list" data-name="painDocs" data-type="multi" data-required="true">
+            <div class="option-item" onclick="selectMultiple(this)">
+              <div class="option-checkbox">&#10003;</div>
+              <div class="option-text">เอกสารการศึกษา (เช่น Transcript, ใบคาดว่าจะจบ, ใบปริญญาบัตร)</div>
+            </div>
+            <div class="option-item" onclick="selectMultiple(this)">
+              <div class="option-checkbox">&#10003;</div>
+              <div class="option-text">เอกสารส่วนตัว/สัญญาเช่า (เช่น สำเนาบัตรประชาชน, ทะเบียนบ้าน, สัญญาเช่าหอ/คอนโด)</div>
+            </div>
+            <div class="option-item" onclick="selectMultiple(this)">
+              <div class="option-checkbox">&#10003;</div>
+              <div class="option-text">เอกสารการเงิน/บิลค่าใช้จ่าย (เช่น สลิปเงินเดือน, บิลค่าน้ำ/ค่าไฟ, สลิปโอนเงิน)</div>
+            </div>
+            <div class="option-item" onclick="selectMultiple(this)">
+              <div class="option-checkbox">&#10003;</div>
+              <div class="option-text">เอกสารการสมัครงานอื่นๆ (เช่น Resume, พอร์ตโฟลิโอ, ใบรับรองการฝึกงาน)</div>
+            </div>
+            <div class="option-item" onclick="selectMultiple(this)">
+              <div class="option-checkbox">&#10003;</div>
+              <div style="flex-grow:1;">
+                <div class="option-text">อื่นๆ (ระบุ)</div>
+                <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="pain-other" placeholder="โปรดระบุเอกสารอื่นๆ" onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 2.2 -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">2. ท่านเคยประสบปัญหาเอกสารสำคัญสูญหาย หรือค้นหาไม่พบเมื่อต้องนำมาใช้งานด่วนหรือไม่ อย่างไร? *</p>
+          <div class="options-list" data-name="lostDocExp" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ไม่เคยประสบปัญหา</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div style="flex-grow:1;">
+                <div class="option-text">เคยประสบปัญหา</div>
+                <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="lost-doc-detail" placeholder="โปรดระบุเหตุการณ์ เช่น หา Transcript ไม่เจอตอนสัมภาษณ์งาน / ลืมสัญญาเช่า" onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 2.3 -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">3. โดยเฉลี่ยแล้ว ท่านต้องเสียเวลาไปกับการ "ขอเอกสารใหม่ / ปริ้นท์ / สแกนเอกสารซ้ำๆ" มากน้อยเพียงใด? *</p>
+          <div class="options-list" data-name="wasteTime" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">น้อยกว่า 30 นาที / เดือน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">1 – 2 ชั่วโมง / เดือน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มากกว่า 2 ชั่วโมง / เดือน</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 2.4 -->
+        <div>
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">4. โดยเฉลี่ยแล้ว ท่านต้องเสียค่าธรรมเนียมไปกับการ "ขอเอกสารใหม่ / ปริ้นท์ / สแกนเอกสารซ้ำๆ" มากน้อยเพียงใด? *</p>
+          <div class="options-list" data-name="wasteMoney" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">น้อยกว่า 100 บาท / เดือน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">100 – 300 บาท / เดือน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มากกว่า 300 บาท / เดือน</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(2)">&larr; ย้อนกลับ</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(2)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+
+      <!-- ==========================================
+           ส่วนที่ 3: Hybrid Use Case & Value Proposition
+           ========================================== -->
+      <div class="card survey-step" data-step="3" style="display: none;">
+        <span class="q-badge">ส่วนที่ 3 / 9</span>
+        <h3 class="q-title">Hybrid Use Case & Value Proposition</h3>
+        <p class="q-subtitle">วัดความสนใจในการใช้งานแอปพลิเคชัน</p>
+
+        <!-- ข้อ 3.1 -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">1. หากมีแอปพลิเคชันที่สามารถช่วยจัดการและส่งต่อเอกสารสำคัญ (เช่น Transcript, เอกสารฝึกงาน ฯลฯ ) ครบจบในที่เดียว และสามารถตรวจสอบความถูกต้องของเอกสารได้ทันที ท่านมีความต้องการให้มีฟีเจอร์ใดบ้างในแอปพลิเคชันนี้? *</p>
+          <div class="options-list" data-name="hybridFeatureInterest" data-type="multi" data-required="true">
+            <div class="option-item" onclick="selectMultiple(this)">
+              <div class="option-radio"></div>
+              <div>
+                <div class="option-text">รับ–ส่งเอกสารออนไลน์อย่างปลอดภัย</div>
+                <div class="option-desc">ส่งเอกสารผ่านระบบออนไลน์ได้ง่ายและปลอดภัย หากผู้รับไม่เปิดอ่านภายในเวลาที่กำหนด ระบบสามารถพิมพ์เอกสารและส่งทางไปรษณีย์ให้อัตโนมัติ</div>
+              </div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div>
+                <div class="option-text">เซ็นเอกสารออนไลน์ได้อย่างถูกต้องและน่าเชื่อถือ</div>
+                <div class="option-desc">สามารถเซ็นชื่อและประทับตราเอกสารแบบดิจิทัล พร้อมบันทึกวันและเวลาการเซ็น เพื่อช่วยยืนยันว่าเอกสารมีการลงนามจริงและสามารถตรวจสอบย้อนหลังได้</div>
+              </div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div>
+                <div class="option-text">กระเป๋าเก็บเอกสารดิจิทัล</div>
+                <div class="option-desc">เก็บเอกสารสำคัญไว้ในรูปแบบดิจิทัล และสามารถตรวจสอบความถูกต้องของเอกสารได้ทันที โดยยืนยันตัวตนผ่าน ThaID</div>
+              </div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div>
+                <div class="option-text">เก็บเอกสารและจ่ายเงินได้ในแอปเดียว</div>
+                <div class="option-desc">มีพื้นที่เก็บเอกสารออนไลน์ที่จัดเป็นหมวดหมู่ ช่วยให้ค้นหาเอกสารได้ง่าย พร้อมทั้งสามารถรับแจ้งหนี้และชำระค่าธรรมเนียมออนไลน์ ได้ภายในแอปเดียว</div>
+              </div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div>
+                <div class="option-text">โหวตออนไลน์และส่งความรู้สึกดี ๆ ผ่านโปสการ์ด</div>
+                <div class="option-desc">สามารถร่วมโหวตผ่านระบบออนไลน์ที่ตรวจสอบได้ และยังสามารถส่งโปสการ์ดออนไลน์ เพื่อส่งคำอวยพรหรือความรู้สึกดี ๆ ให้คนอื่นในเทศกาลต่าง ๆ ได้</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 3.2 -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">2. "เหตุผลสำคัญที่สุด" ที่จะทำให้ท่านตัดสินใจเปิดใช้งานแอปพลิเคชันนี้เป็นครั้งแรก? *</p>
+          <div class="options-list" data-name="triggerReason" data-type="single" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ความสะดวก — จัดการเอกสารและบริการต่าง ๆ ได้ในแอปเดียว</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ประหยัดเวลา — ไม่ต้องเดินทางหรือจัดการเอกสารด้วยตัวเอง</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ความปลอดภัย — มั่นใจว่าเอกสารสำคัญไม่สูญหายและไม่ถูกปลอมแปลง</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ความน่าเชื่อถือ — ส่งต่อเอกสารทางการได้ทันที โดยมีระบบรับรองความถูกต้องที่ปลอดภัย</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ลดการใช้กระดาษ — รับ–ส่งเอกสารในรูปแบบดิจิทัล</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ลดค่าใช้จ่าย — ลดค่าเดินทางและค่าใช้จ่ายในการจัดการเอกสาร</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ยังไม่มีความจำเป็นต้องใช้งาน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this, true)">
+              <div class="option-radio"></div>
+              <div style="flex-grow:1;">
+                <div class="option-text">อื่นๆ (ระบุ)</div>
+                <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="trigger-other" placeholder="โปรดระบุเหตุผลอื่นๆ" onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 3.3 -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">3. ท่านคาดว่าจะกลับมาใช้งานแอปพลิเคชั่นเมื่อใด? *</p>
+          <div class="options-list" data-name="usageFrequency" data-type="single" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">เมื่อต้องทำธุรกรรมสำคัญ: เช่น สมัครงาน, ยื่นเอกสารการศึกษา, ทำเรื่องกับหน่วยงาน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">เมื่อมีเอกสารใหม่เข้ามา: เช่น สัญญาใหม่, บิลค่าใช้จ่าย, เอกสารทางการเงิน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ใช้งานประจำ: เพื่อจัดเก็บและอัปเดตเอกสารส่วนตัวอยู่เสมอ</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ใช้นานๆ ครั้ง: เฉพาะเวลาที่จำเป็นจริงๆ</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this, true)">
+              <div class="option-radio"></div>
+              <div style="flex-grow:1;">
+                <div class="option-text">อื่นๆ (ระบุ)</div>
+                <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="usage-other" placeholder="โปรดระบุอื่นๆ" onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 3.4 -->
+        <div>
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">4. หากแอปพลิเคชันนี้พร้อมใช้งาน ท่านมีแนวโน้มที่จะใช้เป็นประจำหรือไม่? *</p>
+          <div class="options-list" data-name="regularUseIntent" data-type="single" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ใช้อย่างแน่นอน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มีแนวโน้มจะใช้</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ยังไม่แน่ใจ</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มีแนวโน้มจะไม่ใช้</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ไม่ใช้แน่นอน</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(3)">&larr; ย้อนกลับ</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(3)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+
+      <!-- ==========================================
+           ส่วนที่ 4: Pain to Solution Connection
+           ========================================== -->
+      <div class="card survey-step" data-step="4" style="display: none;">
+        <span class="q-badge">ส่วนที่ 4 / 9</span>
+        <h3 class="q-title">Pain to Solution Connection</h3>
+        <p class="q-subtitle">การตอบโจทย์ปัญหาของผู้ใช้งาน</p>
+        
+        <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">1. หากแอปพลิเคชันนี้สามารถแก้ปัญหาเรื่องเอกสารได้ทั้งหมด บริการนี้จะช่วยตอบโจทย์ในการใช้ชีวิตประจำวันของท่านในมิติใดมากที่สุด? *</p>
+        
+        <div class="options-list" data-name="lifeDimension" data-type="single" data-required="true">
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div>
+              <div class="option-text">Live Faster: สะดวก รวดเร็ว ทุกธุรกรรมจบได้ ในไม่กี่ขั้นตอน</div>
+            </div>
+          </div>
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div>
+              <div class="option-text">Live Smarter: ยกระดับคุณภาพชีวิตด้วยนวัตกรรมที่ทันสมัย</div>
+            </div>
+          </div>
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div>
+              <div class="option-text">Live Safer: ปลอดภัยในทุกการทําธุรกรรม</div>
+            </div>
+          </div>
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div>
+              <div class="option-text">Live Greener: ลดการใช้ทรัพยากรกระดาษ เพื่อโลกที่ยั่งยืน</div>
+            </div>
+          </div>
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div>
+              <div class="option-text">Live Happier: สร้างความสุขในทุกไลฟ์สไตล์ยุคดิจิทัล</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(4)">&larr; ย้อนกลับ</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(4)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+
+      <!-- ==========================================
+           ส่วนที่ 5: Target & Marketing Channels
+           ========================================== -->
+      <div class="card survey-step" data-step="5" style="display: none;">
+        <span class="q-badge">ส่วนที่ 5 / 9</span>
+        <h3 class="q-title">Target & Marketing Channels</h3>
+        <p class="q-subtitle">พฤติกรรมและช่องทางการรับรู้สื่อ</p>
+        
+        <p class="q-title" style="font-size: 15px; margin-bottom: 6px;">1. ปกติคุณค้นหา หรือรับข้อมูลเกี่ยวกับแอปพลิเคชัน/เครื่องมือใหม่ๆ จากช่องทางใดบ่อยที่สุด? *</p>
+        <p class="q-subtitle" style="margin-bottom: 12px;">(เลือกได้สูงสุด 2 ข้อ)</p>
+
+        <div class="options-list" data-name="mediaChannels" data-type="multi" data-max="2" data-required="true">
+          <div class="option-item" onclick="selectMultiple(this, 2)">
+            <div class="option-checkbox">&#10003;</div>
+            <div class="option-text">Facebook</div>
+          </div>
+          <div class="option-item" onclick="selectMultiple(this, 2)">
+            <div class="option-checkbox">&#10003;</div>
+            <div class="option-text">Instagram</div>
+          </div>
+          <div class="option-item" onclick="selectMultiple(this, 2)">
+            <div class="option-checkbox">&#10003;</div>
+            <div class="option-text">TikTok</div>
+          </div>
+          <div class="option-item" onclick="selectMultiple(this, 2)">
+            <div class="option-checkbox">&#10003;</div>
+            <div class="option-text">YouTube Shorts</div>
+          </div>
+          <div class="option-item" onclick="selectMultiple(this, 2)">
+            <div class="option-checkbox">&#10003;</div>
+            <div class="option-text">X (Twitter)</div>
+          </div>
+          <div class="option-item" onclick="selectMultiple(this, 2)">
+            <div class="option-checkbox">&#10003;</div>
+            <div class="option-text">การค้นหาบน Google / บล็อกรีวิว</div>
+          </div>
+          <div class="option-item" onclick="selectMultiple(this, 2)">
+            <div class="option-checkbox">&#10003;</div>
+            <div class="option-text">คำแนะนำจากเพื่อน / คนรู้จัก</div>
+          </div>
+          <div class="option-item" onclick="selectMultiple(this, 2)">
+            <div class="option-checkbox">&#10003;</div>
+            <div style="flex-grow:1;">
+              <div class="option-text">อื่นๆ (ระบุ)</div>
+              <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="media-other" placeholder="โปรดระบุช่องทางอื่นๆ" onclick="event.stopPropagation()">
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(5)">&larr; ย้อนกลับ</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(5)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+
+      <!-- ==========================================
+           ส่วนที่ 6: Conversion & Pricing Intent
+           ========================================== -->
+      <div class="card survey-step" data-step="6" style="display: none;">
+        <span class="q-badge">ส่วนที่ 6 / 9</span>
+        <h3 class="q-title">Conversion & Pricing Intent</h3>
+        <p class="q-subtitle">โอกาสในการเปลี่ยนเป็นผู้ใช้งานจริง</p>
+        
+        <!-- ข้อ 6.1 -->
+        <div style="margin-bottom: 22px;">
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">1. อะไรคือปัจจัยสำคัญที่สุดที่จะทำให้คุณตัดสินใจ "ดาวน์โหลด" หรือ "ทดลองใช้" แอปพลิเคชันนี้? *</p>
+          <div class="options-list" data-name="downloadFactor" data-type="multi" data-required="true">
+            <div class="option-item" onclick="selectMultiple(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มีเวอร์ชั่นให้ทดลองใช้งานฟรี (Free Trial)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">แอปช่วยแก้ปัญหาที่ฉันพบได้จริง</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ช่วยประหยัดเวลาในการจัดการเอกสารหรือข้อมูล</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มั่นใจในความปลอดภัยและความเป็นส่วนตัวของข้อมูล</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มีฟังก์ชันที่แตกต่างจากแอปอื่น</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มีรีวิวหรือคะแนนการันตีจากผู้ใช้งานจริง</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">หน้าตาแอป (UI) ใช้งานง่าย ไม่ซับซ้อน</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">มีโปรโมชันส่วนลดพิเศษช่วงเปิดตัว</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this, true)">
+              <div class="option-radio"></div>
+              <div style="flex-grow:1;">
+                <div class="option-text">อื่นๆ (ระบุ)</div>
+                <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="factor-other" placeholder="โปรดระบุปัจจัยอื่นๆ" onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ข้อ 6.2 -->
+        <div>
+          <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">2. หากแอปพลิเคชันนี้มีฟีเจอร์ที่ช่วยแก้ปัญหาข้างต้นได้จริง คุณยินดีจ่ายค่าบริการรูปแบบใด? *</p>
+          <div class="options-list" data-name="pricingModel" data-type="single" data-required="true">
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ใช้งานฟรี (ยอมดูโฆษณา)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">จ่ายรายเดือน (ราคาประหยัด)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">จ่ายรายปี (คุ้มค่ากว่า)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this)">
+              <div class="option-radio"></div>
+              <div class="option-text">ซื้อขาดครั้งเดียว (Lifetime Access)</div>
+            </div>
+            <div class="option-item" onclick="selectSingle(this, true)">
+              <div class="option-radio"></div>
+              <div style="flex-grow:1;">
+                <div class="option-text">อื่นๆ (ระบุ)</div>
+                <input type="text" class="custom-textarea" style="min-height:36px; height:36px; padding:6px 10px; margin-top:6px;" id="pricing-other" placeholder="โปรดระบุรูปแบบอื่นๆ" onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(6)">&larr; ย้อนกลับ</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(6)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+
+      <!-- ==========================================
+           ส่วนที่ 7: Brand Awareness
+           ========================================== -->
+      <div class="card survey-step" data-step="7" style="display: none;">
+        <span class="q-badge">ส่วนที่ 7 / 9</span>
+        <h3 class="q-title">Brand Awareness</h3>
+        <p class="q-subtitle">แนะนำแอปพลิเคชันและวัดการรับรู้แบรนด์</p>
+        
+        <div class="feature-box" style="flex-direction: column; gap: 8px;">
+          <h4 style="color: var(--deep-navy); font-size: 15.5px; margin-bottom: 4px;">📮 Prompt Post</h4>
+          <p style="font-size: 13.5px; color: #334155; margin-bottom: 8px;">
+            แอปพลิเคชันที่จะมาช่วย <strong>จัดการเอกสารของคุณ</strong> ด้วยฟีเจอร์หลักที่จะช่วยให้ชีวิตคุณง่ายขึ้น ดังนี้:
+          </p>
+          <ol style="padding-left: 20px; font-size: 13px; color: #334155; display: flex; flex-direction: column; gap: 6px;">
+            <li><strong>Digital Postbox:</strong> ตู้จดหมายดิจิทัลประจำตัว จัดเก็บเอกสารการศึกษา ใบเสร็จ บิลค่าใช้จ่าย และเอกสารราชการไว้บนคลาวด์ ย้ายหอพักกี่ครั้งเอกสารก็ไม่สูญหาย</li>
+            <li><strong>VC Prompt Pass:</strong> ทรานสคริปต์ดิจิทัลและเอกสารสำคัญที่ตรวจสอบความถูกต้องได้ทันที ปลอมแปลงไม่ได้ ส่งสมัครงานออนไลน์ได้ในคลิกเดียว</li>
+            <li><strong>Trusted e-Signature:</strong> ลงลายมือชื่อดิจิทัลและเซ็นสัญญาเช่า/สัญญาจ้างที่มีผลตามกฎหมาย จบบนสมาร์ตโฟนทันที</li>
+            <li><strong>Storage & Payment - Digital Safebox:</strong> จัดเก็บเอกสารแยกหมวดหมู่บนคลาวด์ที่ปลอดภัย และระบบ e-Payment บริการแจ้งหนี้และชำระค่าธรรมเนียมเบ็ดเสร็จในแอปเดียว</li>
+            <li><strong>Lifestyle Services:</strong> ร่วมกิจกรรมโหวตอย่างโปร่งใส ตรวจสอบได้ผ่าน E-Vote และบริการส่งมอบความรู้สึกดีๆ ทุกเทศกาลด้วยระบบ Postcard Online</li>
+          </ol>
+        </div>
+
+        <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">1. คุณเคยเห็นหรือเคยยินชื่อแอปพลิเคชัน Prompt Post มาก่อนหรือไม่? *</p>
+        
+        <div class="options-list" data-name="brandAwareness" data-type="single" data-required="true">
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">เคยใช้งานอยู่ปัจจุบัน</div>
+          </div>
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">เคยเห็น/เคยยินชื่อ แต่ยังไม่เคยใช้งาน</div>
+          </div>
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">ไม่เคยเห็น/ไม่เคยได้ยินมาก่อน</div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(7)">&larr; ย้อนกลับ</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(7)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+
+      <!-- ==========================================
+           ส่วนที่ 8: Value & Pain Point Relief
+           ========================================== -->
+      <div class="card survey-step" data-step="8" style="display: none;">
+        <span class="q-badge">ส่วนที่ 8 / 9</span>
+        <h3 class="q-title">Value & Pain Point Relief</h3>
+        <p class="q-subtitle">ประเมินความสนใจและคุณค่าในการแก้ไขปัญหา</p>
+        
+        <p class="q-title" style="font-size: 15px; margin-bottom: 8px;">1. คุณคิดว่าฟีเจอร์ของ Prompt Post สามารถช่วยตอบโจทย์ หรือแก้ปัญหาในชีวิตประจำวันของคุณได้มากน้อยเพียงใด? *</p>
+        
+        <div class="options-list" data-name="valueRelief" data-type="single" data-required="true">
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">ช่วยได้มากที่สุด (ตรงกับปัญหาที่พบอยู่พอดี)</div>
+          </div>
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">ช่วยได้ปานกลาง</div>
+          </div>
+          <div class="option-item" onclick="selectSingle(this)">
+            <div class="option-radio"></div>
+            <div class="option-text">ยังไม่ค่อยจำเป็นสำหรับฉันเท่าไร</div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(8)">&larr; ย้อนกลับ</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(8)">ถัดไป &rarr;</button>
+        </div>
+      </div>
+
+
+      <!-- ==========================================
+           ส่วนที่ 9: Actionable Feedback
+           ========================================== -->
+      <div class="card survey-step" data-step="9" style="display: none;">
+        <span class="q-badge">ส่วนที่ 9 / 9 (ข้อสุดท้าย)</span>
+        <h3 class="q-title">Actionable Feedback (การพัฒนาต่อ)</h3>
+        
+        <p class="q-title" style="font-size: 15px; margin-bottom: 6px;">1. หากคุณตัดสินใจทดลองใช้แอปนี้ หรือหากอยากให้แอปนี้ตอบโจทย์ชีวิตคุณได้ดียิ่งขึ้น คุณอยากให้มีฟีเจอร์อะไรเพิ่มเติม หรือมีความกังวลในเรื่องใดมากที่สุด?</p>
+        <p class="q-subtitle" style="margin-bottom: 12px;">(คำตอบของคุณมีค่ามากสำหรับการพัฒนาแอปพลิเคชันให้ดียิ่งขึ้น)</p>
+        
+        <textarea class="custom-textarea" id="actionable-feedback" placeholder="พิมพ์ข้อเสนอแนะ หรือข้อกังวลที่คุณอยากบอกทีมงานได้ที่นี่..." style="min-height: 120px;"></textarea>
+
+        <div class="step-actions">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(9)">&larr; ย้อนกลับ</button>
+          <button type="button" class="btn btn-primary" id="btn-submit" onclick="submitSurvey()">
+            <span>ส่งคำตอบแบบสอบถาม</span> &#10003;
+          </button>
+        </div>
+      </div>
+
+    </form>
+
+    <!-- TERMINATE SCREEN (เมื่อไม่ผ่าน Screening) -->
+    <div class="card success-card" id="terminate-screen" style="display: none;">
+      <div class="success-icon" style="background: #FEE2E2; color: #DC2626;">&#10005;</div>
+      <h3>ขอขอบคุณสำหรับความสนใจของท่าน</h3>
+      <p>เนื่องจากแบบสำรวจวิจัยนี้จัดทำขึ้นโดยกำหนดกลุ่มเป้าหมายเฉพาะสำหรับ <strong>นิสิตนักศึกษาและบัณฑิตจบใหม่ (อายุ 21 – 25 ปี)</strong> จึงขอสิ้นสุดการสำรวจเพียงเท่านี้</p>
+    </div>
+
+    <!-- SUCCESS SCREEN (คำขอบคุณแบบสะอาดตาตามที่ผู้ใช้กำหนด) -->
+    <div class="card success-card" id="success-screen" style="display: none;">
+      <div class="success-icon">&#10003;</div>
+      <h3>ขอบคุณสำหรับความคิดเห็นของคุณ!</h3>
+      <p>ข้อมูลของคุณช่วยเป็นพลังสำคัญในการออกแบบและพัฒนาบริการ <strong>Prompt Post</strong> เพื่อตอบโจทย์คนรุ่นใหม่อย่างแท้จริง</p>
+    </div>
+
+    <!-- Footer -->
+    <footer style="text-align: center; margin-top: 36px; font-size: 12.5px; color: var(--text-muted);">
+      <p>&copy; 2026 Prompt Post Survey Platform &bull; Document Less, Live More</p>
+    </footer>
+
+  </div>
+
+  <!-- ADMIN LOGIN MODAL FROM TOP-RIGHT BUTTON -->
+  <div class="modal-overlay" id="top-admin-modal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="margin-bottom: 0;">🔒 เข้าสู่ระบบผู้ดูแลระบบ (Admin)</h3>
+        <span onclick="closeAdminModal()" style="cursor: pointer; font-size: 20px; color: #94A3B8;">&times;</span>
+      </div>
+      <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;">
+        กรุณากรอกรหัสผ่านเพื่อเข้าดูหน้า Dashboard สรุปผลวิเคราะห์สถิติ
+      </p>
+      
+      <form onsubmit="handleTopAdminSubmit(event)">
+        <input type="password" id="top-admin-pass" class="modal-input" placeholder="กรอกรหัสผ่าน..." style="text-align: center; font-size: 16px; letter-spacing: 2px;" required autofocus>
+        <div id="top-admin-error" style="color: #EF4444; font-size: 13px; margin-top: -10px; margin-bottom: 14px; display: none;">
+          รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeAdminModal()">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary">เข้าสู่ระบบ &rarr;</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/survey.js"></script>
+  <script>
+    function openAdminModal() {
+      document.getElementById('top-admin-modal').style.display = 'flex';
+      document.getElementById('top-admin-pass').value = '';
+      document.getElementById('top-admin-error').style.display = 'none';
+      setTimeout(() => document.getElementById('top-admin-pass').focus(), 100);
+    }
+    function closeAdminModal() {
+      document.getElementById('top-admin-modal').style.display = 'none';
+    }
+    function handleTopAdminSubmit(e) {
+      e.preventDefault();
+      const val = document.getElementById('top-admin-pass').value.trim();
+      if (val === "0637941837") {
+        sessionStorage.setItem("admin_auth", "true");
+        window.location.href = "admin.html";
+      } else {
+        document.getElementById('top-admin-error').style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

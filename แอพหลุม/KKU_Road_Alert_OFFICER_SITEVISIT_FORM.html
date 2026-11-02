@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KKU Road Alert</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #f0f4f8; overflow-x: hidden; }
+        .app-container { max-width: 440px; margin: 0 auto; background-color: #ffffff; min-height: 100vh; position: relative; box-shadow: 0 0 25px rgba(0,0,0,0.15); display: flex; flex-direction: column; }
+        .hide { display: none !important; }
+        
+        /* Nav active status style */
+        .bottom-nav-active { color: #003853; font-weight: 700; transform: scale(1.05); }
+        .bottom-nav-inactive { color: #9ca3af; font-weight: 400; }
+
+        a[href^="https://www.netlify.com"] { display: none !important; }
+
+        /* Custom Markers */
+        .custom-div-icon { background: transparent; border: none; }
+        .marker-pin { width: 30px; height: 30px; border-radius: 50% 50% 50% 0; position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -15px 0 0 -15px; box-shadow: 0 3px 6px rgba(0,0,0,0.4); }
+        .marker-pin::after { content: ''; width: 14px; height: 14px; margin: 8px 0 0 8px; background: #fff; position: absolute; border-radius: 50%; }
+        .pin-red { background: #ef4444; }
+        .pin-yellow { background: #eab308; }
+        .pin-green { background: #22c55e; }
+
+        .map-modal { z-index: 99999; }
+
+        /* KKU Road Alert - unified interaction states */
+        button { -webkit-tap-highlight-color: transparent; transition: transform .12s ease, box-shadow .15s ease, border-color .15s ease, background-color .15s ease, color .15s ease; }
+        button:active { transform: scale(.97); }
+        button.is-pressed { transform: scale(.97); box-shadow: 0 0 0 3px rgba(22,92,125,.12), 0 2px 5px rgba(0,0,0,.08); }
+        button.is-selected, button.selected, button[aria-selected="true"] { border-color:#165C7D !important; background:#eaf6fa !important; color:#165C7D !important; box-shadow:0 0 0 2px rgba(22,92,125,.12),0 4px 10px rgba(22,92,125,.10); }
+        .bottom-nav-active { color:#003853 !important; font-weight:700; transform:scale(1.03); background:#eaf6fa; border:1px solid #b9dce7; border-radius:14px; padding:6px 10px; box-shadow:0 2px 8px rgba(0,56,83,.10); }
+        .bottom-nav-inactive { color:#9ca3af; font-weight:400; background:transparent; border:1px solid transparent; border-radius:14px; padding:6px 10px; }
+        @media (hover:hover){ button:not(:disabled):hover{filter:brightness(.98)} button.bottom-nav-inactive:hover{background:#f5f9fb;border-color:#dcecf1;color:#165C7D} }
+        button:disabled { opacity:.55; cursor:not-allowed; }
+
+        .user-status-timeline { position:relative; padding-left:26px; }
+        .user-status-timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:2px; background:#dbe5ea; }
+        .user-status-step { position:relative; padding-bottom:20px; }
+        .user-status-step:last-child { padding-bottom:0; }
+        .user-status-step::before { content:''; position:absolute; left:-23px; top:4px; width:12px; height:12px; border-radius:999px; background:#d1d5db; border:2px solid #fff; box-shadow:0 0 0 1px #d1d5db; }
+        .user-status-step.done::before { background:#169b73; box-shadow:0 0 0 1px #169b73; }
+        .user-status-step.active::before { background:#165C7D; box-shadow:0 0 0 3px rgba(22,92,125,.12); }
+        .officer-quickbar { position:sticky; top:58px; z-index:45; background:rgba(240,244,248,.96); backdrop-filter:blur(8px); border-bottom:1px solid #dbe5ea; padding:8px 12px; }
+        .officer-stat-btn { cursor:pointer; text-align:left; transition:transform .12s ease, box-shadow .15s ease; }
+        .officer-stat-btn:active { transform:scale(.98); }
+
+        .status-track { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
+        .status-dot { height:6px; border-radius:99px; background:#e5e7eb; }
+        .status-dot.done { background:#22c55e; } .status-dot.active { background:#165C7D; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- BANNER แจ้งเตือนหลุมระยะกระชั้นชิด -->
+    <div id="vibration-alert-banner" class="fixed top-4 left-1/2 transform -translate-x-1/2 w-11/12 max-w-sm bg-red-600 text-white p-4 rounded-2xl shadow-2xl z-[999999] hide flex items-center gap-3 border-2 border-white animate-bounce">
+        <div class="text-2xl bg-white text-red-600 w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+            <h4 class="font-bold text-sm">เตือนอันตราย! พบหลุมข้างหน้า</h4>
+            <p class="text-xs text-red-100">ระวังการขับขี่ในระยะ 50 เมตร</p>
+        </div>
+        <button onclick="closeVibeAlert()" class="ml-auto text-white/80 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+
+    <!-- PAGE 1: ROLE SELECTION -->
+    <div id="page-role" class="flex flex-col min-h-screen bg-[#003853] text-white p-6 justify-between">
+        <div class="pt-10">
+            <div class="w-14 h-14 bg-white/10 backdrop-blur rounded-2xl flex items-center justify-center mb-6 border border-white/20">
+                <i class="fa-solid fa-road-barrier text-2xl text-white"></i>
+            </div>
+            <p class="text-xs tracking-widest text-blue-200 font-semibold uppercase">Khon Kaen University</p>
+            <h1 class="text-4xl font-extrabold tracking-tight mt-1 mb-4">KKU Road Alert</h1>
+            <p class="text-sm text-blue-100 font-light leading-relaxed max-w-xs">
+                แจ้งปัญหาถนน รับรู้จุดเสี่ยง และช่วยให้ทุกการเดินทางปลอดภัยยิ่งขึ้น
+            </p>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 text-gray-800 shadow-2xl space-y-4 mb-6">
+            <h2 class="text-lg font-bold text-gray-900">เลือกบทบาทเพื่อเริ่มต้นใช้งาน</h2>
+            
+            <button onclick="selectRole('user')" class="w-full bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 rounded-2xl p-4 flex items-center justify-between text-left transition group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-[#008ba3] text-white rounded-xl flex items-center justify-center text-xl shadow-md">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-sm">ประชาชน / นักศึกษา</h3>
+                        <p class="text-xs text-gray-500">ดูแผนที่ แจ้งปัญหา และติดตามเรื่อง</p>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-gray-400"></i>
+            </button>
+
+            <button onclick="requestOfficerAccess()" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl p-4 flex items-center justify-between text-left transition group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-slate-800 text-white rounded-xl flex items-center justify-center text-xl shadow-md">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-sm">เจ้าหน้าที่ภาครัฐ</h3>
+                        <p class="text-xs text-gray-500">รับเรื่อง อัปเดตสถานะ และจัดการงาน</p>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-gray-400"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- APP WRAPPER: USER -->
+    <div id="page-user-app" class="hide flex-col flex-grow min-h-screen">
+        <div class="bg-[#003853] text-white px-5 py-4 flex justify-between items-center shadow-md">
+            <div>
+                <p class="text-[10px] text-blue-200 font-semibold tracking-wider">KHON KAEN UNIVERSITY</p>
+                <h1 class="text-lg font-bold leading-none">KKU Road Alert</h1>
+            </div>
+            <button onclick="switchRole()" class="text-xs bg-white/10 px-3 py-1.5 rounded-full border border-white/20 text-blue-100">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i> สลับบทบาท
+            </button>
+        </div>
+
+        <!-- TAB: HOME -->
+        <div id="tab-user-home" class="user-tab flex-grow p-5 space-y-5">
+            <div class="bg-gradient-to-r from-blue-900 to-[#165C7D] rounded-2xl p-4 text-white shadow-md flex justify-between items-center">
+                <div>
+                    <span class="bg-blue-400/30 text-blue-100 text-[10px] px-2.5 py-0.5 rounded-full border border-blue-300/30">GPS Real-time Active</span>
+                    <h2 class="text-base font-bold mt-1">กำลังติดตามตำแหน่งของคุณ</h2>
+                    <p id="user-gps-text" class="text-xs text-blue-100 mt-0.5"><i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังจับพิกัดของคุณ...</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3 border border-gray-200 shadow-sm space-y-2">
+                <div class="flex justify-between items-center px-1">
+                    <h3 class="text-xs font-bold text-gray-700">แผนที่จุดเสี่ยงรอบตัวคุณ</h3>
+                </div>
+                <div id="map-home" class="w-full h-48 rounded-xl border border-gray-200"></div>
+            </div>
+
+            <button onclick="switchUserTab('report')" class="w-full bg-[#165C7D] text-white rounded-2xl p-4 shadow-lg flex items-center justify-center gap-3">
+                <i class="fa-solid fa-camera text-2xl"></i>
+                <div class="text-left">
+                    <h3 class="font-bold text-base leading-tight">ถ่ายรูปแจ้งปัญหาถนน</h3>
+                    <p class="text-xs text-blue-100">อัปโหลดปุ๊บ ปักหมุดขึ้นแผนที่ทันที</p>
+                </div>
+            </button>
+
+            <div>
+                <h3 class="text-xs font-bold text-gray-600 mb-2">จุดชำรุดที่ถูกรายงานล่าสุด</h3>
+                <div id="recent-reports-list" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- TAB: REPORT -->
+        <div id="tab-user-report" class="user-tab hide flex-grow p-5 space-y-4">
+            <h2 class="text-base font-bold text-gray-800">แจ้งปัญหาถนนชำรุด</h2>
+
+            <!-- GPS ของผู้ใช้ในหน้ารายงาน -->
+            <div class="bg-gradient-to-r from-blue-900 to-[#165C7D] rounded-2xl p-4 text-white shadow-md">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <span class="bg-blue-400/30 text-blue-100 text-[10px] px-2.5 py-0.5 rounded-full border border-blue-300/30">
+                            GPS Real-time Active
+                        </span>
+                        <h3 class="text-sm font-bold mt-2">
+                            <i class="fa-solid fa-location-crosshairs mr-1"></i>
+                            ตำแหน่ง GPS ของคุณ
+                        </h3>
+                        <p id="report-user-gps" class="text-xs text-blue-100 mt-1 font-mono">
+                            <i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังค้นหาตำแหน่งของคุณ...
+                        </p>
+                    </div>
+                    <button type="button" onclick="useMyGpsForReport()"
+                            class="shrink-0 bg-white text-[#165C7D] text-[10px] font-bold px-3 py-2 rounded-lg shadow-sm">
+                        <i class="fa-solid fa-location-dot mr-1"></i> ใช้ตำแหน่งฉัน
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-2">
+                <label class="block text-xs font-bold text-gray-700">1. ถ่ายภาพ / อัปโหลดรูป <span class="text-red-500">*</span></label>
+                <div id="uploadBox" class="border-2 border-dashed border-gray-300 rounded-xl p-5 text-center cursor-pointer" onclick="document.getElementById('imageInput').click()">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-400 mb-1"></i>
+                    <p class="text-xs text-gray-500">แตะเพื่อเลือกรูปภาพ</p>
+                </div>
+                <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="previewImage(event)">
+                <div class="relative">
+                    <img id="imagePreview" class="hidden w-full h-36 object-cover rounded-xl border">
+                    <button id="removeImgBtn" onclick="removeImage(event)" class="hidden absolute top-2 right-2 bg-red-500 text-white w-7 h-7 rounded-full shadow text-xs"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-2">
+                <div class="flex justify-between items-center">
+                    <label class="text-xs font-bold text-gray-700">2. ระบุตำแหน่ง <span class="text-red-500">*</span></label>
+                    <button onclick="openFullMapModal()" class="text-[11px] bg-blue-50 text-[#165C7D] font-bold px-2 py-1 rounded-lg border border-blue-200">
+                        <i class="fa-solid fa-expand mr-1"></i> ขยายแผนที่
+                    </button>
+                </div>
+                <div id="map-report-mini" class="w-full h-40 rounded-xl border border-gray-200"></div>
+
+                                <p id="report-coords" class="text-[11px] font-mono text-gray-500 text-right">พิกัดจุดแจ้ง: -</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+                <label class="block text-xs font-bold text-gray-700">3. ค้นหาสถานที่เกิดเหตุ</label>
+                <div class="flex gap-2">
+                    <input id="location-search-input" class="flex-1 bg-gray-50 border rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#165C7D]" placeholder="เช่น ประตูเขียว มข. / คณะวิศวกรรมศาสตร์" onkeydown="if(event.key==='Enter') searchReportLocation()">
+                    <button onclick="searchReportLocation()" class="bg-[#165C7D] text-white px-4 rounded-xl text-xs font-bold"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+                <p id="location-search-result" class="text-[11px] text-gray-500">พิมพ์ชื่อสถานที่เพื่อค้นหาและเลื่อนหมุดไปยังตำแหน่งนั้น</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+                <label class="block text-xs font-bold text-gray-700">4. ระดับความรุนแรง <span class="text-red-500">*</span></label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" data-select-group="severity" aria-selected="false" onclick="selectSeverity('ระดับ 1')" class="severity-btn border border-gray-200 rounded-xl py-3 text-xs font-bold text-gray-600">ระดับ 1<br><span class="font-normal text-[10px]">เล็กน้อย</span></button>
+                    <button type="button" data-select-group="severity" aria-selected="false" onclick="selectSeverity('ระดับ 2')" class="severity-btn border border-gray-200 rounded-xl py-3 text-xs font-bold text-gray-600">ระดับ 2<br><span class="font-normal text-[10px]">ปานกลาง</span></button>
+                    <button type="button" data-select-group="severity" aria-selected="false" onclick="selectSeverity('ระดับ 3')" class="severity-btn border border-gray-200 rounded-xl py-3 text-xs font-bold text-gray-600">ระดับ 3<br><span class="font-normal text-[10px]">อันตราย</span></button>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-2">
+                <label class="block text-xs font-bold text-gray-700">5. รายละเอียดเพิ่มเติม</label>
+                <textarea id="report-desc" rows="2" class="w-full bg-gray-50 border rounded-xl p-2.5 text-xs focus:outline-none" placeholder="ระบุขนาดหลุม หรือจุดสังเกต..."></textarea>
+            </div>
+
+            <button onclick="submitUserReport()" class="w-full bg-[#165C7D] text-white py-3 rounded-xl font-bold text-sm shadow-md">
+                ส่งข้อมูลแจ้งปัญหาทันที
+            </button>
+        </div>
+
+        <!-- TAB: MAP FULL -->
+        <div id="tab-user-map" class="user-tab hide flex-grow p-4 flex flex-col space-y-3">
+            <h2 class="text-base font-bold text-gray-800">แผนที่จุดเสี่ยงทั้งหมด</h2>
+            <div id="map-user-full" class="w-full flex-grow rounded-2xl border min-h-[450px]"></div>
+        </div>
+
+        <!-- TAB: MY REPORTS -->
+        <div id="tab-user-reports" class="user-tab hide flex-grow p-5 space-y-3">
+            <h2 class="text-base font-bold text-gray-800">รายการแจ้งปัญหา (เรียลไทม์)</h2>
+            <div id="all-user-reports-list" class="space-y-3"></div>
+        </div>
+
+
+        <!-- USER: STATUS DETAIL -->
+        <div id="page-user-status-detail" class="hide flex-col flex-grow min-h-screen bg-[#f0f4f8]">
+            <div class="bg-white px-4 py-3 flex items-center gap-3 border-b sticky top-0 z-50">
+                <button onclick="closeUserStatusDetail()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-700">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold">ติดตามเรื่องร้องเรียน</p>
+                    <h1 class="text-base font-bold text-gray-800">ติดตามสถานะ</h1>
+                </div>
+            </div>
+            <div class="p-4 space-y-3 overflow-y-auto pb-8">
+                <div class="bg-white rounded-3xl p-5 border shadow-sm space-y-3">
+                    <div class="flex justify-between items-start gap-3">
+                        <div>
+                            <p id="user-detail-id" class="text-xs font-bold text-[#0b7899]"></p>
+                            <h2 id="user-detail-title" class="text-lg font-extrabold text-gray-900"></h2>
+                            <p id="user-detail-location" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                        <span id="user-detail-status" class="shrink-0 text-[10px] font-bold px-3 py-2 rounded-full bg-emerald-50 text-emerald-700"></span>
+                    </div>
+                    <p id="user-detail-desc" class="text-xs text-gray-600 leading-relaxed"></p>
+                    <img id="user-detail-img" class="w-full h-40 object-cover rounded-2xl border" alt="รูปจุดชำรุด">
+                </div>
+
+                <div class="bg-cyan-50 rounded-2xl p-4 border border-cyan-100">
+                    <p class="text-sm font-bold text-[#165C7D]">ข้อความจากหน่วยงาน</p>
+                    <p id="user-detail-message" class="text-xs text-gray-600 mt-1">รอการอัปเดตจากเจ้าหน้าที่</p>
+                </div>
+
+                <div class="bg-white rounded-3xl p-5 border shadow-sm">
+                    <h3 class="text-base font-bold text-[#163b53] mb-5">สถานะการดำเนินงาน</h3>
+                    <div id="user-status-timeline" class="user-status-timeline"></div>
+                </div>
+
+                <div id="user-repair-result" class="bg-white rounded-3xl p-5 border shadow-sm hide">
+                    <h3 class="text-base font-bold text-[#163b53] mb-3">ผลการซ่อม</h3>
+                    <div id="user-repair-text" class="text-xs text-gray-700 leading-relaxed"></div>
+                    <img id="user-repair-after" class="hidden w-full h-40 object-cover rounded-2xl border mt-3" alt="รูปหลังซ่อม">
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV -->
+        <div class="bg-white border-t border-gray-200 flex justify-around py-2.5 px-4 sticky bottom-0 shadow-lg z-50">
+            <button id="nav-btn-home" onclick="switchUserTab('home')" class="user-nav-btn bottom-nav-active flex flex-col items-center transition-all">
+                <i class="fa-solid fa-house text-lg mb-0.5"></i>
+                <span class="text-[10px]">หน้าหลัก</span>
+            </button>
+            <button id="nav-btn-map" onclick="switchUserTab('map')" class="user-nav-btn bottom-nav-inactive flex flex-col items-center transition-all">
+                <i class="fa-solid fa-map-location-dot text-lg mb-0.5"></i>
+                <span class="text-[10px]">แผนที่</span>
+            </button>
+            <button id="nav-btn-report" onclick="switchUserTab('report')" class="user-nav-btn bottom-nav-inactive flex flex-col items-center transition-all">
+                <i class="fa-solid fa-circle-plus text-lg mb-0.5"></i>
+                <span class="text-[10px]">แจ้งปัญหา</span>
+            </button>
+            <button id="nav-btn-reports" onclick="switchUserTab('reports')" class="user-nav-btn bottom-nav-inactive flex flex-col items-center transition-all">
+                <i class="fa-solid fa-list-check text-lg mb-0.5"></i>
+                <span class="text-[10px]">รายการแจ้ง</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PAGE 2: OFFICER DASHBOARD -->
+    <div id="page-officer" class="hide flex-col flex-grow min-h-screen bg-[#f0f4f8]">
+        <div class="bg-[#003853] text-white px-5 pt-6 pb-6 rounded-b-3xl shadow-md flex justify-between items-start">
+            <div>
+                <p class="text-[10px] text-blue-200 font-semibold">KKU ROAD ALERT</p>
+                <h1 class="text-2xl font-extrabold mt-0.5">ศูนย์ปฏิบัติการ</h1>
+            </div>
+            <button onclick="switchRole()" class="bg-white/10 p-2 rounded-full border border-white/20"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+
+        <div class="p-5 space-y-5 -mt-3">
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="filterOfficerTickets('new')" class="officer-stat-btn bg-red-50 border border-red-100 p-3.5 rounded-2xl">
+                    <p class="text-xs font-bold text-red-700">เรื่องใหม่</p>
+                    <p id="stat-new" class="text-2xl font-extrabold text-red-900 mt-1">0</p>
+                </button>
+                <button type="button" onclick="filterOfficerTickets('pending')" class="officer-stat-btn bg-amber-50 border border-amber-100 p-3.5 rounded-2xl">
+                    <p class="text-xs font-bold text-amber-700">รอตรวจสอบ</p>
+                    <p id="stat-pending" class="text-2xl font-extrabold text-amber-900 mt-1">0</p>
+                </button>
+                <button type="button" onclick="filterOfficerTickets('progress')" class="officer-stat-btn bg-sky-50 border border-sky-100 p-3.5 rounded-2xl">
+                    <p class="text-xs font-bold text-sky-700">กำลังดำเนินการ</p>
+                    <p id="stat-progress" class="text-2xl font-extrabold text-sky-900 mt-1">0</p>
+                </button>
+                <button type="button" onclick="filterOfficerTickets('done')" class="officer-stat-btn bg-emerald-50 border border-emerald-100 p-3.5 rounded-2xl">
+                    <p class="text-xs font-bold text-emerald-700">เสร็จสิ้น</p>
+                    <p id="stat-done" class="text-2xl font-extrabold text-emerald-900 mt-1">0</p>
+                </button>
+            </div>
+
+            <div class="bg-white p-3 rounded-2xl border shadow-sm">
+                <h3 class="text-xs font-bold text-gray-700">แผนที่ปัญหาในพื้นที่</h3>
+                <div id="map-officer" class="w-full h-44 rounded-xl border mt-2"></div>
+            </div>
+
+            <div class="space-y-3">
+                <h3 id="officer-ticket-heading" class="text-xs font-bold text-gray-700">รายการร้องเรียนล่าสุด</h3>
+                <div id="officer-ticket-list" class="space-y-2.5"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: OFFICER DETAIL -->
+    <div id="page-officer-detail" class="hide fixed inset-0 z-[99990] overflow-y-auto bg-[#f0f4f8]">
+        <div class="bg-white px-4 py-3 flex items-center gap-3 border-b sticky top-0 z-50">
+            <button onclick="closeOfficerDetail()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-600" aria-label="ปิด"><i class="fa-solid fa-xmark"></i></button>
+            <h1 class="text-base font-bold text-gray-800">ตรวจสอบเรื่องร้องเรียน</h1>
+        </div>
+
+        <div class="officer-quickbar">
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="updateTicketStatus('รับเรื่องแล้ว')" class="bg-[#165C7D] text-white py-2.5 rounded-xl text-[11px] font-bold shadow-sm">รับเรื่อง</button>
+                <button onclick="updateTicketStatus('กำลังซ่อมแซม')" class="bg-sky-50 text-sky-800 border border-sky-200 py-2.5 rounded-xl text-[11px] font-bold">กำลังซ่อม</button>
+                <button onclick="openSiteVisitQuick()" class="bg-amber-50 text-amber-800 border border-amber-200 py-2.5 rounded-xl text-[11px] font-bold">ลงพื้นที่ / ซ่อม</button>
+            </div>
+        </div>
+
+        <div class="p-5 space-y-4">
+            <div class="bg-white rounded-3xl p-5 border shadow-sm space-y-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p id="detail-id" class="text-xs font-bold text-[#165C7D]"></p>
+                        <h2 id="detail-title" class="text-lg font-extrabold text-gray-900"></h2>
+                    </div>
+                    <span id="detail-severity-badge" class="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full"></span>
+                </div>
+                <img id="detail-img" class="w-full h-44 object-cover rounded-2xl border">
+                <div class="space-y-1">
+                    <p id="detail-desc" class="text-xs text-gray-700 font-medium"></p>
+                    <p id="detail-location" class="text-[11px] text-gray-500"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-xl border">
+                    <p id="detail-log" class="text-[11px] text-gray-600"></p>
+                </div>
+            </div>
+
+            <div class="space-y-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="updateTicketStatus('รับเรื่องแล้ว')" class="bg-[#165C7D] text-white py-3 rounded-xl text-xs font-bold">รับเรื่อง</button>
+                    <button onclick="updateTicketStatus('ขอข้อมูลเพิ่มเติม')" class="bg-amber-100 text-amber-800 py-3 rounded-xl text-xs font-bold">ขอข้อมูลเพิ่ม</button>
+                </div>
+                <button onclick="updateTicketStatus('กำลังซ่อมแซม')" class="w-full bg-[#165C7D] text-white py-3 rounded-xl text-xs font-bold">อัปเดตสถานะ (กำลังซ่อมแซม)</button>
+                <button onclick="updateTicketStatus('เสร็จสิ้น')" class="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 py-3 rounded-xl text-xs font-bold">ปิดเรื่องร้องเรียน</button>
+
+                <div class="bg-white rounded-2xl border p-4 space-y-3 shadow-sm">
+                    <h3 class="text-xs font-bold text-gray-800"><i class="fa-solid fa-screwdriver-wrench mr-1 text-[#165C7D]"></i> บันทึกการลงพื้นที่ / ซ่อม</h3>
+                    <input id="visit-note" class="w-full bg-gray-50 border rounded-xl px-3 py-2.5 text-xs" placeholder="รายละเอียดการตรวจสอบหรือการซ่อม">
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="border border-dashed rounded-xl p-3 text-center cursor-pointer text-xs text-gray-500"><i class="fa-solid fa-camera mr-1"></i>รูปก่อนซ่อม<input id="visit-before" type="file" accept="image/*" class="hidden" onchange="previewVisitImage(this,'before-preview')"></label>
+                        <label class="border border-dashed rounded-xl p-3 text-center cursor-pointer text-xs text-gray-500"><i class="fa-solid fa-camera mr-1"></i>รูปหลังซ่อม<input id="visit-after" type="file" accept="image/*" class="hidden" onchange="previewVisitImage(this,'after-preview')"></label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2"><img id="before-preview" class="hidden w-full h-24 object-cover rounded-xl border"><img id="after-preview" class="hidden w-full h-24 object-cover rounded-xl border"></div>
+                    <button onclick="saveSiteVisit()" class="w-full bg-[#165C7D] text-white py-3 rounded-xl text-xs font-bold"><i class="fa-solid fa-floppy-disk mr-1"></i>บันทึกการลงพื้นที่</button>
+                </div>
+
+                <button onclick="deleteActiveReport()" class="w-full bg-red-50 text-red-600 border border-red-200 py-3 rounded-xl text-xs font-bold"><i class="fa-solid fa-trash mr-1"></i>ลบรายการหลุม</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SITE VISIT FORM MODAL -->
+    <div id="site-visit-modal" class="hide fixed inset-0 z-[100000] overflow-y-auto bg-[#f0f4f8]">
+        <div class="min-h-screen">
+            <div class="bg-[#f0f4f8] px-4 py-3 flex items-center gap-3 sticky top-0 z-50">
+                <button type="button" onclick="closeSiteVisitForm()" class="w-10 h-10 rounded-2xl bg-white text-[#18324a] shadow-sm flex items-center justify-center" aria-label="ปิด">
+                    <i class="fa-solid fa-arrow-left text-lg"></i>
+                </button>
+                <h1 class="text-xl font-extrabold text-[#18324a]">บันทึกการลงพื้นที่</h1>
+            </div>
+
+            <div class="px-5 pb-8 space-y-5">
+                <div class="text-sm font-semibold text-[#18324a]">วันที่ลงพื้นที่</div>
+                <input id="visit-form-date" type="date"
+                    class="w-full h-14 rounded-2xl border border-[#cbdde5] bg-white px-4 text-base text-[#18324a] outline-none">
+
+                <div class="text-sm font-semibold text-[#18324a]">เวลาลงพื้นที่</div>
+                <input id="visit-form-time" type="time"
+                    class="w-full h-14 rounded-2xl border border-[#cbdde5] bg-white px-4 text-base text-[#18324a] outline-none">
+
+                <div class="text-sm font-semibold text-[#18324a]">เจ้าหน้าที่ผู้รับผิดชอบ</div>
+                <input id="visit-form-officer" type="text" value="" placeholder="โปรดระบุชื่อเจ้าหน้าที่"
+                    class="w-full h-14 rounded-2xl border border-[#cbdde5] bg-white px-4 text-base text-[#18324a] outline-none">
+
+                <div class="text-sm font-semibold text-[#18324a]">สภาพถนนที่ตรวจพบ</div>
+                <textarea id="visit-form-condition" rows="3"
+                    class="w-full rounded-2xl border border-[#cbdde5] bg-white px-4 py-4 text-base text-[#18324a] outline-none resize-y"></textarea>
+
+                <div class="text-sm font-semibold text-[#18324a]">วิธีการแก้ไข</div>
+                <textarea id="visit-form-method" rows="3"
+                    class="w-full rounded-2xl border border-[#cbdde5] bg-white px-4 py-4 text-base text-[#18324a] outline-none resize-y"></textarea>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-sm font-semibold text-[#18324a] mb-2">ภาพก่อนซ่อม</div>
+                        <label class="h-14 rounded-2xl border border-[#cbdde5] bg-white px-3 flex items-center gap-2 cursor-pointer overflow-hidden text-sm">
+                            <span class="shrink-0 border border-gray-400 rounded px-2 py-1 bg-gray-50">Choose File</span>
+                            <span id="visit-form-before-name" class="truncate text-gray-600">No file chosen</span>
+                            <input id="visit-form-before" type="file" accept="image/*" class="hidden"
+                                   onchange="previewVisitImage(this,'visit-form-before-preview'); document.getElementById('visit-form-before-name').textContent=this.files[0]?.name||'No file chosen'">
+                        </label>
+                        <img id="visit-form-before-preview" class="hide mt-2 w-full h-28 object-cover rounded-2xl border">
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-[#18324a] mb-2">ภาพหลังซ่อม</div>
+                        <label class="h-14 rounded-2xl border border-[#cbdde5] bg-white px-3 flex items-center gap-2 cursor-pointer overflow-hidden text-sm">
+                            <span class="shrink-0 border border-gray-400 rounded px-2 py-1 bg-gray-50">Choose File</span>
+                            <span id="visit-form-after-name" class="truncate text-gray-600">No file chosen</span>
+                            <input id="visit-form-after" type="file" accept="image/*" class="hidden"
+                                   onchange="previewVisitImage(this,'visit-form-after-preview'); document.getElementById('visit-form-after-name').textContent=this.files[0]?.name||'No file chosen'">
+                        </label>
+                        <img id="visit-form-after-preview" class="hide mt-2 w-full h-28 object-cover rounded-2xl border">
+                    </div>
+                </div>
+
+                <div class="text-sm font-semibold text-[#18324a]">วันที่ดำเนินการเสร็จสิ้น</div>
+                <input id="visit-form-completed" type="date"
+                    class="w-full h-14 rounded-2xl border border-[#cbdde5] bg-white px-4 text-base text-[#18324a] outline-none">
+
+                <button type="button" onclick="saveSiteVisitForm()"
+                    class="w-full bg-[#15956f] text-white py-4 rounded-2xl text-base font-extrabold shadow-sm">
+                    <i class="fa-solid fa-floppy-disk mr-2"></i>บันทึกการลงพื้นที่
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MAP -->
+    <div id="modal-map-pick" class="fixed inset-0 bg-black/70 map-modal hide flex flex-col p-4">
+        <div class="bg-white rounded-t-2xl p-3 flex justify-between items-center">
+            <h3 class="text-sm font-bold">ลากหมุดเพื่อระบุตำแหน่ง</h3>
+            <button onclick="closeFullMapModal()" class="bg-gray-100 px-3 py-1 rounded-lg text-xs font-bold">เสร็จสิ้น</button>
+        </div>
+        <div id="map-modal-container" class="w-full flex-grow rounded-b-2xl"></div>
+    </div>
+</div>
+    <!-- OFFICER PASSWORD -->
+    <div id="officer-password-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999999] hide items-center justify-center p-5">
+        <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl">
+            <div class="w-14 h-14 mx-auto bg-slate-100 text-slate-700 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-lock"></i></div>
+            <h2 class="text-lg font-bold text-center text-gray-800">เข้าสู่ฝั่งเจ้าหน้าที่</h2>
+            <p class="text-xs text-gray-500 text-center mt-1 mb-5">กรุณาใส่รหัสเจ้าหน้าที่ก่อนเข้าใช้งาน</p>
+            <input id="officer-password-input" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="w-full text-center text-2xl tracking-[0.5em] bg-gray-50 border border-gray-200 rounded-2xl py-3 focus:outline-none focus:ring-2 focus:ring-[#165C7D]" placeholder="••••" onkeydown="if(event.key==='Enter') verifyOfficerPassword()">
+            <p id="officer-password-error" class="text-xs text-red-500 text-center mt-2 hide">รหัสไม่ถูกต้อง กรุณาลองใหม่</p>
+            <div class="grid grid-cols-2 gap-2 mt-5">
+                <button type="button" onclick="closeOfficerPassword()" class="py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm">ยกเลิก</button>
+                <button type="button" onclick="verifyOfficerPassword()" class="py-3 rounded-xl bg-[#003853] text-white font-bold text-sm shadow-md">เข้าสู่ระบบ</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // URL สำหรับ Google Apps Script
+    const GOOGLE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby4ys0dj4qjLm2RhW24yWqpJuUMWMSOTGWkfdunjCCPJ3xxLf5qpUCo5b7Sa7bqZRVxUQ/exec"; 
+    // ลิงก์ Google Drive ที่ผู้ใช้ให้มา สำหรับนำไปผูกกับหน้าที่ต้องการภายหลัง
+    const GOOGLE_DRIVE_LINK = "https://drive.google.com/file/d/10lb11Of2dvR81J4lS_abeZxhRhQtGG1u/view?usp=sharing";
+
+
+    // DATA STORES
+    let reportsData = [];
+
+    let userLat = 16.4751, userLon = 102.8224;
+    let selectedLat = userLat, selectedLon = userLon;
+    let userMarkerReport = null;
+    let activeTicketId = null;
+    let expandedOfficerTicketId = null;
+    let mapHome, mapUserFull, mapOfficer, mapReportMini, mapModalPick, markerReportMini, markerModalPick;
+    let homeMarkersGroup, fullMapMarkersGroup, officerMarkersGroup;
+    let userMarkerHome, userMarkerFull;
+    let syncInterval = null;
+
+    const satelliteUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    const createIcon = (color) => L.divIcon({ className: 'custom-div-icon', html: `<div class="marker-pin pin-${color}"></div>`, iconSize: [30, 42], iconAnchor: [15, 42] });
+    
+    // ไอคอนตำแหน่งปัจจุบันของผู้ใช้
+    const userLocationIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div class="w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-lg animate-ping"></div><div class="w-4 h-4 bg-blue-600 border-2 border-white rounded-full shadow-lg absolute top-0 left-0"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+
+    // ================= FETCH & SYNC DATA =================
+    async function fetchReportsFromSheets() {
+        if(GOOGLE_WEB_APP_URL.includes("ใส่_URL")) return;
+        try {
+            const response = await fetch(GOOGLE_WEB_APP_URL + "?action=read");
+            const data = await response.json();
+            if(data && Array.isArray(data)) {
+                reportsData = data.map(r => {
+                    const extra = JSON.parse(localStorage.getItem('kkuRoadExtras_' + r.id) || '{}');
+                    if(r.repair_method) r.repairResult = r.repair_method;
+                    if(r.after_image) r.afterImg = r.after_image;
+                    if(r.completed_date) r.repairDate = r.completed_date;
+                    if(extra.repair) {
+                        r.visitNote = extra.repair.method || r.repairResult || '';
+                        r.repairResult = r.repairResult || extra.repair.method || '';
+                        r.afterImg = r.afterImg || extra.repair.after || '';
+                        r.repairDate = r.repairDate || extra.repair.completedDate || '';
+                    }
+                    return r;
+                });
+                updateMapMarkers();
+                updateOfficerMapMarkers();
+                renderOfficerDashboard();
+                renderUserReportsList();
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    }
+
+    function startAutoSync() {
+        fetchReportsFromSheets();
+        if(!syncInterval) {
+            syncInterval = setInterval(() => {
+                fetchReportsFromSheets();
+            }, 5000); // ซิงก์ทุก 5 วินาที เพื่อให้หลายเครื่องเห็นข้อมูลใหม่เร็วขึ้น
+        }
+    }
+
+    // ================= NAVIGATION & TAB CONTROL =================
+    function selectRole(role) {
+        document.getElementById('page-role').classList.add('hide');
+        if(role === 'user') {
+            document.getElementById('page-user-app').classList.remove('hide'); document.getElementById('page-user-app').classList.add('flex');
+            initUserMaps(); startGpsTracking(); startAutoSync(); switchUserTab('home');
+        } else {
+            document.getElementById('page-officer').classList.remove('hide'); document.getElementById('page-officer').classList.add('flex');
+            initOfficerMap(); renderOfficerDashboard(); startAutoSync();
+        }
+    }
+
+    function switchRole() {
+        expandedOfficerTicketId = null;
+        if(syncInterval) clearInterval(syncInterval);
+        document.getElementById('page-user-app').classList.add('hide'); document.getElementById('page-officer').classList.add('hide');
+        document.getElementById('page-officer-detail').classList.add('hide'); document.getElementById('page-user-status-detail').classList.add('hide'); document.getElementById('page-role').classList.remove('hide');
+    }
+
+    function switchUserTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.user-tab').forEach(el => el.classList.add('hide'));
+        
+        // Reset Nav styles
+        document.querySelectorAll('.user-nav-btn').forEach(el => {
+            el.classList.remove('bottom-nav-active');
+            el.classList.add('bottom-nav-inactive');
+        });
+
+        // Activate Selected Tab
+        document.getElementById('tab-user-' + tabName).classList.remove('hide');
+        const activeNavBtn = document.getElementById('nav-btn-' + tabName);
+        if(activeNavBtn) {
+            activeNavBtn.classList.remove('bottom-nav-inactive');
+            activeNavBtn.classList.add('bottom-nav-active');
+        }
+
+        // Handle Maps Invalidation
+        if(tabName === 'home' && mapHome) setTimeout(() => mapHome.invalidateSize(), 200);
+        if(tabName === 'report' && mapReportMini) setTimeout(() => mapReportMini.invalidateSize(), 200);
+        if(tabName === 'map' && mapUserFull) setTimeout(() => mapUserFull.invalidateSize(), 200);
+        if(tabName === 'reports') renderUserReportsList();
+    }
+
+    // ================= MAPS =================
+    function initUserMaps() {
+        if(mapHome) return;
+
+        // Map Home
+        mapHome = L.map('map-home', {zoomControl: false, attributionControl: false}).setView([userLat, userLon], 15); 
+        L.tileLayer(satelliteUrl).addTo(mapHome);
+        homeMarkersGroup = L.layerGroup().addTo(mapHome);
+
+        // Map Full
+        mapUserFull = L.map('map-user-full', {zoomControl: true, attributionControl: false}).setView([userLat, userLon], 15); 
+        L.tileLayer(satelliteUrl).addTo(mapUserFull);
+        fullMapMarkersGroup = L.layerGroup().addTo(mapUserFull);
+
+        // Map Report Mini
+        mapReportMini = L.map('map-report-mini', {zoomControl: false, attributionControl: false}).setView([selectedLat, selectedLon], 15); 
+        L.tileLayer(satelliteUrl).addTo(mapReportMini);
+        markerReportMini = L.marker([selectedLat, selectedLon], {icon: createIcon('red'), draggable: true}).addTo(mapReportMini);
+
+        // หมุดสีน้ำเงิน = ตำแหน่ง GPS ปัจจุบันของผู้ใช้
+        if(userLat && userLon) {
+            userMarkerReport = L.marker([userLat, userLon], {icon: userLocationIcon, zIndexOffset: 1000})
+                .addTo(mapReportMini)
+                .bindPopup("ตำแหน่ง GPS ของคุณ");
+        }
+        
+        markerReportMini.on('dragend', (e) => updateReportCoords(e.target.getLatLng().lat, e.target.getLatLng().lng));
+        mapReportMini.on('click', (e) => { markerReportMini.setLatLng(e.latlng); updateReportCoords(e.latlng.lat, e.latlng.lng); });
+
+        updateMapMarkers();
+        updateReportUserGps();
+    }
+
+    function initOfficerMap() {
+        if(mapOfficer) return;
+        mapOfficer = L.map('map-officer', {zoomControl: false, attributionControl: false}).setView([userLat, userLon], 14); 
+        L.tileLayer(satelliteUrl).addTo(mapOfficer);
+        officerMarkersGroup = L.layerGroup().addTo(mapOfficer);
+        updateOfficerMapMarkers();
+    }
+
+    function updateReportCoords(lat, lng) {
+        selectedLat = lat; selectedLon = lng;
+        document.getElementById('report-coords').innerText = `พิกัดจุดแจ้ง: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    }
+
+    // แสดง GPS ปัจจุบันของผู้ใช้ในหน้ารายงาน
+    function updateReportUserGps() {
+        const el = document.getElementById('report-user-gps');
+        if(!el) return;
+
+        if(userLat != null && userLon != null) {
+            el.innerHTML = `<span class="text-blue-100"><i class="fa-solid fa-circle-check text-emerald-300 mr-1"></i>ละติจูด: ${userLat.toFixed(6)} | ลองจิจูด: ${userLon.toFixed(6)}</span>`;
+        } else {
+            el.innerHTML = `<span class="text-gray-500"><i class="fa-solid fa-spinner mr-1"></i>กำลังค้นหาตำแหน่ง...</span>`;
+        }
+    }
+
+    // ใช้ GPS ปัจจุบันเป็นจุดแจ้งปัญหา
+    function useMyGpsForReport() {
+        if(userLat == null || userLon == null) {
+            alert('ยังไม่พบตำแหน่ง GPS ของคุณ กรุณาอนุญาตการเข้าถึงตำแหน่งก่อน');
+            return;
+        }
+
+        updateReportCoords(userLat, userLon);
+
+        if(markerReportMini) markerReportMini.setLatLng([userLat, userLon]);
+        if(mapReportMini) {
+            mapReportMini.setView([userLat, userLon], 17);
+            setTimeout(() => mapReportMini.invalidateSize(), 150);
+        }
+
+        if(mapModalPick) {
+            mapModalPick.setView([userLat, userLon], 17);
+            if(markerModalPick) markerModalPick.setLatLng([userLat, userLon]);
+        }
+    }
+
+    function updateMapMarkers() {
+        if(!homeMarkersGroup || !fullMapMarkersGroup) return;
+        homeMarkersGroup.clearLayers();
+        fullMapMarkersGroup.clearLayers();
+
+        // ปักหมุดตำแหน่งปัจจุบันของผู้ใช้
+        if(userLat && userLon) {
+            userMarkerHome = L.marker([userLat, userLon], {icon: userLocationIcon}).addTo(homeMarkersGroup).bindPopup("ตำแหน่งของคุณ");
+            userMarkerFull = L.marker([userLat, userLon], {icon: userLocationIcon}).addTo(fullMapMarkersGroup).bindPopup("ตำแหน่งของคุณ");
+        }
+
+        // ปักหมุดรายการหลุม
+        reportsData.forEach(item => {
+            const lat = parseFloat(item.lat);
+            const lon = parseFloat(item.lon);
+            if(!isNaN(lat) && !isNaN(lon)) {
+                L.marker([lat, lon], {icon: createIcon('red')}).addTo(homeMarkersGroup).bindPopup(`<b>${item.title}</b><br>${item.desc}`);
+                L.marker([lat, lon], {icon: createIcon('red')}).addTo(fullMapMarkersGroup).bindPopup(`<b>${item.title}</b><br>${item.desc}`);
+            }
+        });
+        renderRecentHomeList();
+    }
+
+    function updateOfficerMapMarkers() {
+        if(!officerMarkersGroup) return;
+        officerMarkersGroup.clearLayers();
+
+        reportsData.forEach(item => {
+            const lat = parseFloat(item.lat);
+            const lon = parseFloat(item.lon);
+            if(!isNaN(lat) && !isNaN(lon)) {
+                let color = item.status.includes('เสร็จ') ? 'green' : item.status.includes('ซ่อม') ? 'yellow' : 'red';
+                L.marker([lat, lon], {icon: createIcon(color)}).addTo(officerMarkersGroup).bindPopup(`<b>${item.title}</b><br>สถานะ: ${item.status}`);
+            }
+        });
+    }
+
+    function openFullMapModal() {
+        document.getElementById('modal-map-pick').classList.remove('hide');
+        if(!mapModalPick) {
+            mapModalPick = L.map('map-modal-container', {zoomControl: true}).setView([selectedLat, selectedLon], 16); 
+            L.tileLayer(satelliteUrl).addTo(mapModalPick);
+            markerModalPick = L.marker([selectedLat, selectedLon], {icon: createIcon('red'), draggable: true}).addTo(mapModalPick);
+            markerModalPick.on('dragend', (e) => {
+                const p = e.target.getLatLng();
+                markerReportMini.setLatLng(p);
+                updateReportCoords(p.lat, p.lng);
+            });
+
+            // แตะ/คลิกตรงไหนบนแผนที่ก็ปักหมุดตรงนั้นได้
+            mapModalPick.on('click', (e) => {
+                markerModalPick.setLatLng(e.latlng);
+                if (markerReportMini) markerReportMini.setLatLng(e.latlng);
+                updateReportCoords(e.latlng.lat, e.latlng.lng);
+            });
+        } else {
+            mapModalPick.setView([selectedLat, selectedLon], 16); markerModalPick.setLatLng([selectedLat, selectedLon]); setTimeout(() => mapModalPick.invalidateSize(), 200);
+        }
+    }
+    function closeFullMapModal() {
+        document.getElementById('modal-map-pick').classList.add('hide');
+        if (markerReportMini) markerReportMini.setLatLng([selectedLat, selectedLon]);
+        if (mapReportMini) {
+            mapReportMini.setView([selectedLat, selectedLon]);
+            setTimeout(() => mapReportMini.invalidateSize(), 150);
+        }
+    }
+
+    // ================= GPS REAL-TIME TRACKING =================
+    function startGpsTracking() {
+        if(navigator.geolocation) {
+            navigator.geolocation.watchPosition((pos) => {
+                userLat = pos.coords.latitude; 
+                userLon = pos.coords.longitude;
+                
+                document.getElementById('user-gps-text').innerHTML = `<i class="fa-solid fa-location-dot text-emerald-400 mr-1"></i> ละติจูด: ${userLat.toFixed(4)}, ลองจิจูด: ${userLon.toFixed(4)}`;
+                
+                // อัปเดตตำแหน่งหมุดสีฟ้าบนแผนที่
+                if(userMarkerHome) userMarkerHome.setLatLng([userLat, userLon]);
+                if(userMarkerFull) userMarkerFull.setLatLng([userLat, userLon]);
+                if(userMarkerReport) userMarkerReport.setLatLng([userLat, userLon]);
+
+                // อัปเดตตัวเลข GPS ในหน้ารายงาน
+                updateReportUserGps();
+
+                // ตรวจสอบระยะทางอัตโนมัติ (ถ้าระยะห่างน้อยกว่า 50 เมตร ให้สั่น/เตือน)
+                reportsData.forEach(item => { 
+                    const itemLat = parseFloat(item.lat);
+                    const itemLon = parseFloat(item.lon);
+                    if(!isNaN(itemLat) && !isNaN(itemLon)) {
+                        if(getDistance(userLat, userLon, itemLat, itemLon) < 0.05) {
+                            triggerVibrationAlert(); 
+                        }
+                    }
+                });
+            }, (error) => { 
+                document.getElementById('user-gps-text').innerText = "ใช้พิกัดเริ่มต้น (กรุณาเปิด GPS)"; 
+            }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 });
+        }
+    }
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+        var p = 0.017453292519943295; 
+        var c = Math.cos; 
+        var a = 0.5 - c((lat2 - lat1) * p)/2 + c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p))/2; 
+        return 12742 * Math.asin(Math.sqrt(a)); // คืนค่าเป็นกิโลเมตร
+    }
+
+    function triggerVibrationAlert() { 
+        document.getElementById('vibration-alert-banner').classList.remove('hide'); 
+        if("vibrate" in navigator) navigator.vibrate([300, 100, 300]); 
+    }
+    function closeVibeAlert() { document.getElementById('vibration-alert-banner').classList.add('hide'); }
+
+    // ================= UPLOAD & SUBMIT =================
+    function previewImage(e) {
+        if(e.target.files[0]) {
+            const r = new FileReader(); r.onload = (evt) => {
+                document.getElementById('imagePreview').src = evt.target.result; document.getElementById('imagePreview').classList.remove('hidden');
+                document.getElementById('removeImgBtn').classList.remove('hidden'); document.getElementById('uploadBox').classList.add('hidden');
+            }; r.readAsDataURL(e.target.files[0]);
+        }
+    }
+    function removeImage(e) {
+        if(e) e.preventDefault(); document.getElementById('imageInput').value = ""; document.getElementById('imagePreview').src = "";
+        document.getElementById('imagePreview').classList.add('hidden'); document.getElementById('removeImgBtn').classList.add('hidden'); document.getElementById('uploadBox').classList.remove('hidden');
+    }
+
+    async function submitUserReport() {
+        const desc = document.getElementById('report-desc').value;
+        const imgSrc = document.getElementById('imagePreview').src || "https://images.unsplash.com/photo-1578844251758-2f71da64c96f?w=600";
+        if(document.getElementById('imageInput').files.length === 0 && !document.getElementById('imagePreview').src) { alert("กรุณาถ่ายรูปหลุมก่อนครับ"); return; }
+
+        const newReport = {
+            id: "KKU-" + Math.floor(100000 + Math.random() * 900000), 
+            title: desc ? desc.substring(0,20) : "พบหลุมบนถนน",
+            severity: "ระดับ 3", 
+            status: "หน่วยงานได้รับเรื่อง", 
+            location: "บริเวณมหาวิทยาลัยขอนแก่น",
+            lat: selectedLat, 
+            lon: selectedLon, 
+            desc: desc || "แจ้งปัญหาผ่านแอป", 
+            img: imgSrc, 
+            log: "อัปโหลดข้อมูลแล้ว"
+        };
+
+        // 1. นำข้อมูลแสดงผลบนหน้าจอทันที
+        reportsData.unshift(newReport);
+        updateMapMarkers(); 
+        updateOfficerMapMarkers(); 
+        removeImage();
+        document.getElementById('report-desc').value = "";
+        
+        // 2. ส่งข้อมูลบันทึกลง Google Sheets
+        if(!GOOGLE_WEB_APP_URL.includes("ใส่_URL")) {
+            try {
+                await fetch(GOOGLE_WEB_APP_URL, {
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "create", data: newReport })
+                });
+            } catch (err) {
+                console.log("บันทึกลง Sheet ไม่สำเร็จ:", err);
+            }
+        }
+
+        alert("ส่งข้อมูลสำเร็จ! หมุดถูกเพิ่มลงระบบเรียบร้อยแล้ว");
+        switchUserTab('reports');
+    }
+
+    // ================= RENDER LISTS & DASHBOARD =================
+    function renderRecentHomeList() {
+        document.getElementById('recent-reports-list').innerHTML = reportsData.slice(0, 3).map(r => `
+            <div class="bg-white p-3 rounded-xl border flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-3"><img src="${r.img}" class="w-10 h-10 object-cover rounded-lg">
+                <div><h4 class="text-xs font-bold text-gray-800">${r.title}</h4><p class="text-[10px] text-gray-400">${r.location}</p></div></div>
+                <span class="text-[10px] bg-red-50 text-red-600 px-2 rounded-full font-bold">${r.severity}</span>
+            </div>`).join('');
+    }
+
+    function renderUserReportsList() {
+        document.getElementById('all-user-reports-list').innerHTML = reportsData.map(r => `
+            <button type="button" onclick="openUserStatusDetail('${r.id}')" class="w-full text-left bg-white p-4 rounded-2xl border space-y-2 shadow-sm hover:border-cyan-300 transition">
+                <div class="flex justify-between items-start"><div><span class="text-[10px] font-bold text-[#165C7D]">${r.id}</span>
+                <h3 class="text-sm font-bold text-gray-800">${r.title}</h3></div>
+                <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">${r.status}</span></div>
+                <img src="${r.img}" class="w-full h-36 object-cover rounded-xl border"><p class="text-xs text-gray-600 leading-relaxed">${r.desc}</p>
+                <div class="status-track"><span class="status-dot ${statusStep(r.status)>=1?'done':''}"></span><span class="status-dot ${statusStep(r.status)>=2?'done':''}"></span><span class="status-dot ${statusStep(r.status)>=3?'active':''}"></span><span class="status-dot ${statusStep(r.status)>=4?'done':''}"></span></div>
+                ${r.repairResult ? `<div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-[11px] text-emerald-800"><b>ผลการซ่อม:</b> ${r.repairResult}${r.repairDate?`<br><b>วันที่:</b> ${r.repairDate}`:''}${r.afterImg?`<img src="${r.afterImg}" class="w-full h-28 object-cover rounded-lg mt-2">`:''}</div>` : ''}
+            </button>`).join('');
+    }
+
+    function renderOfficerDashboard() {
+        document.getElementById('stat-new').innerText = reportsData.filter(r => r.status.includes('ใหม่') || r.status.includes('รับเรื่อง')).length;
+        document.getElementById('stat-pending').innerText = reportsData.filter(r => r.status.includes('รอ') || r.status.includes('ข้อมูล')).length || 0;
+        document.getElementById('stat-progress').innerText = reportsData.filter(r => r.status.includes('ซ่อม')).length;
+        document.getElementById('stat-done').innerText = reportsData.filter(r => r.status.includes('เสร็จ')).length;
+        renderOfficerTicketList(reportsData);
+    }
+
+    function officerStatusClass(status) {
+        if(String(status).includes('เสร็จ')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        if(String(status).includes('ซ่อม')) return 'bg-sky-50 text-sky-800 border-sky-200';
+        if(String(status).includes('รอ') || String(status).includes('ตรวจ')) return 'bg-amber-50 text-amber-800 border-amber-200';
+        return 'bg-cyan-50 text-[#165C7D] border-cyan-100';
+    }
+
+    function renderOfficerTicketList(list) {
+        const box = document.getElementById('officer-ticket-list');
+        if(!box) return;
+        // Preserve the currently expanded ticket when auto-sync re-renders the list.
+        // Without this, the 5-second Google Sheets sync replaces innerHTML and collapses the card.
+        if (expandedOfficerTicketId && !list.some(r => String(r.id) === String(expandedOfficerTicketId))) {
+            expandedOfficerTicketId = null;
+        }
+        box.innerHTML = list.length ? list.map(r => `
+            <div class="officer-ticket-wrap" data-ticket-id="${r.id}">
+                <button type="button" onclick="toggleOfficerTicket('${r.id}')" class="w-full bg-white p-4 rounded-2xl border flex justify-between items-center text-left cursor-pointer shadow-sm hover:border-cyan-500 transition">
+                    <div class="min-w-0 pr-3">
+                        <p class="text-[10px] font-bold text-gray-400">${r.id}</p>
+                        <h4 class="text-sm font-bold text-gray-800 truncate">${r.title}</h4>
+                        <p class="text-[10px] text-gray-400 mt-1 truncate">${r.location || 'ไม่ระบุสถานที่'}</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full border ${officerStatusClass(r.status)}">${r.status}</span>
+                        <i id="ticket-chevron-${r.id}" class="fa-solid fa-chevron-down text-gray-400 text-xs transition-transform"></i>
+                    </div>
+                </button>
+                <div id="ticket-detail-${r.id}" class="hide mt-1 bg-white rounded-b-2xl border border-t-0 shadow-sm overflow-hidden">
+                    ${buildInlineOfficerDetail(r)}
+                </div>
+            </div>`).join('') : '<div class="bg-white rounded-2xl p-5 text-center text-xs text-gray-400 border">ไม่มีรายการในหมวดนี้</div>';
+
+        // Re-open the same card after every data refresh so it never "flashes open then disappears".
+        if (expandedOfficerTicketId) {
+            const detail = document.getElementById('ticket-detail-' + expandedOfficerTicketId);
+            const chevron = document.getElementById('ticket-chevron-' + expandedOfficerTicketId);
+            if (detail) detail.classList.remove('hide');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+        }
+    }
+
+    function buildInlineOfficerDetail(item) {
+        const repair = item.repairResult || item.visitNote || '';
+        const after = item.afterImg || '';
+        return `
+            <div class="p-4 space-y-3 border-t bg-slate-50/70">
+                <div class="flex justify-between items-start gap-3">
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-400">รายละเอียดหลุม</p>
+                        <p class="text-xs font-semibold text-gray-800 mt-1">${item.desc || 'ไม่ได้ระบุรายละเอียด'}</p>
+                    </div>
+                    <span class="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border ${officerStatusClass(item.status)}">${item.severity || 'ไม่ระบุระดับ'}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="inlineUpdateTicket('${item.id}','รับเรื่องแล้ว')" class="bg-[#165C7D] text-white py-2.5 rounded-xl text-[11px] font-bold">รับเรื่อง</button>
+                    <button type="button" onclick="inlineUpdateTicket('${item.id}','กำลังซ่อมแซม')" class="bg-sky-50 text-sky-800 border border-sky-200 py-2.5 rounded-xl text-[11px] font-bold">กำลังซ่อม</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="inlineToggleVisit('${item.id}')" class="bg-amber-50 text-amber-800 border border-amber-200 py-2.5 rounded-xl text-[11px] font-bold">ลงพื้นที่ / บันทึกงาน</button>
+                    <button type="button" onclick="inlineDeleteTicket('${item.id}')" class="bg-red-50 text-red-700 border border-red-200 py-2.5 rounded-xl text-[11px] font-bold">ลบเรื่อง</button>
+                </div>
+                <div id="inline-visit-${item.id}" class="hide bg-white rounded-xl border p-3 space-y-3">
+                    <p class="text-xs font-bold text-gray-800"><i class="fa-solid fa-clipboard-check mr-1 text-[#165C7D]"></i>บันทึกการลงพื้นที่ / ผลการซ่อม</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="text-[10px] font-semibold text-gray-600">วันที่ลงพื้นที่
+                            <input id="inline-date-${item.id}" type="date" value="${new Date().toISOString().slice(0,10)}" class="w-full mt-1 bg-gray-50 border rounded-xl px-3 py-2 text-xs">
+                        </label>
+                        <label class="text-[10px] font-semibold text-gray-600">เวลาลงพื้นที่
+                            <input id="inline-time-${item.id}" type="time" value="${new Date().toTimeString().slice(0,5)}" class="w-full mt-1 bg-gray-50 border rounded-xl px-3 py-2 text-xs">
+                        </label>
+                    </div>
+                    <label class="text-[10px] font-semibold text-gray-600 block">เจ้าหน้าที่ผู้รับผิดชอบ
+                        <input id="inline-officer-${item.id}" value="" placeholder="โปรดระบุชื่อเจ้าหน้าที่" class="w-full mt-1 bg-gray-50 border rounded-xl px-3 py-2 text-xs">
+                    </label>
+                    <label class="text-[10px] font-semibold text-gray-600 block">สภาพถนนที่ตรวจพบ
+                        <textarea id="inline-condition-${item.id}" class="w-full mt-1 bg-gray-50 border rounded-xl px-3 py-2 text-xs" rows="2" placeholder="เช่น พบหลุมลึก ผิวถนนแตกร้าว มีน้ำขัง"></textarea>
+                    </label>
+                    <label class="text-[10px] font-semibold text-gray-600 block">วิธีการแก้ไข / รายละเอียดการซ่อม
+                        <textarea id="inline-visit-note-${item.id}" class="w-full mt-1 bg-gray-50 border rounded-xl px-3 py-2 text-xs" rows="3" placeholder="เช่น ตรวจพบหลุมลึก 10 ซม. ดำเนินการอุดซ่อมแล้ว">${repair}</textarea>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="border border-dashed rounded-xl p-3 text-center cursor-pointer text-[10px] text-gray-500"><i class="fa-solid fa-camera mr-1"></i>รูปก่อนซ่อม<input id="inline-before-${item.id}" type="file" accept="image/*" class="hidden" onchange="previewVisitImage(this,'inline-before-preview-${item.id}')"></label>
+                        <label class="border border-dashed rounded-xl p-3 text-center cursor-pointer text-[10px] text-gray-500"><i class="fa-solid fa-camera mr-1"></i>รูปหลังซ่อม<input id="inline-after-${item.id}" type="file" accept="image/*" class="hidden" onchange="previewVisitImage(this,'inline-after-preview-${item.id}')"></label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <img id="inline-before-preview-${item.id}" class="hidden w-full h-24 object-cover rounded-xl border">
+                        <img id="inline-after-preview-${item.id}" class="hidden w-full h-24 object-cover rounded-xl border">
+                    </div>
+                    <label class="text-[10px] font-semibold text-gray-600 block">วันที่ดำเนินการเสร็จสิ้น
+                        <input id="inline-completed-${item.id}" type="date" value="${new Date().toISOString().slice(0,10)}" class="w-full mt-1 bg-gray-50 border rounded-xl px-3 py-2 text-xs">
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="inlineUpdateTicket('${item.id}','กำลังซ่อมแซม')" class="bg-sky-50 text-sky-800 border border-sky-200 py-2.5 rounded-xl text-[11px] font-bold">บันทึกเป็นกำลังซ่อม</button>
+                        <button type="button" onclick="saveInlineSiteVisit('${item.id}')" class="bg-emerald-600 text-white py-2.5 rounded-xl text-[11px] font-bold">บันทึกและปิดเรื่อง</button>
+                    </div>
+                </div>
+                ${item.log ? `<div class="text-[10px] text-gray-500 bg-gray-50 rounded-xl p-2.5"><b>อัปเดตล่าสุด:</b> ${item.log}</div>` : ''}
+                ${item.repairResult ? `<div class="bg-emerald-50 border border-emerald-100 rounded-xl p-2.5 text-[10px] text-emerald-800"><b>ผลการซ่อม:</b> ${item.repairResult}</div>` : ''}
+            </div>`;
+    }
+
+    function toggleOfficerTicket(id) {
+        // เปิดรายละเอียดเป็นหน้าต่าง/ป๊อปอัปแยกจากรายการ เพื่อไม่ให้ Auto Sync ทุก 5 วินาที
+        // สร้างรายการใหม่แล้วทำให้ฟอร์มหาย เจ้าหน้าที่จะเป็นคนกด X เพื่อปิดเอง
+        const item = reportsData.find(r => String(r.id) === String(id));
+        if(!item) return;
+        activeTicketId = id;
+        expandedOfficerTicketId = null;
+        openOfficerDetail(id);
+    }
+
+    // ================= OFFICER ACTIONS =================
+    function openOfficerDetail(id) {
+        activeTicketId = id; const item = reportsData.find(r => r.id === id); if(!item) return;
+        document.getElementById('detail-id').innerText = item.id; document.getElementById('detail-title').innerText = item.title;
+        document.getElementById('detail-severity-badge').innerText = item.severity; document.getElementById('detail-img').src = item.img;
+        document.getElementById('detail-desc').innerText = item.desc; document.getElementById('detail-location').innerText = `${item.location} · ${item.lat}, ${item.lon}`;
+        document.getElementById('detail-log').innerHTML = `<span class="font-bold">บันทึกล่าสุด:</span> ${item.log}`;
+        document.getElementById('page-officer-detail').classList.remove('hide'); document.getElementById('page-officer-detail').classList.add('flex');
+    }
+    function closeOfficerDetail() {
+        const page = document.getElementById('page-officer-detail');
+        if(page) { page.classList.add('hide'); page.classList.remove('flex'); }
+        activeTicketId = null;
+    }
+
+    async function updateTicketStatus(newStatus) {
+        if(!activeTicketId) return; const item = reportsData.find(r => r.id === activeTicketId);
+        if(item) {
+            item.status = newStatus; item.log = `เจ้าหน้าที่อัปเดตสถานะ: ${newStatus}`;
+            
+            if(!GOOGLE_WEB_APP_URL.includes("ใส่_URL")) {
+                try {
+                    await fetch(GOOGLE_WEB_APP_URL, {
+                        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: "update", id: item.id, status: newStatus, log: item.log })
+                    });
+                } catch (err) {
+                    console.log("อัปเดต Sheet ไม่สำเร็จ:", err);
+                }
+            }
+
+            document.getElementById('detail-log').innerHTML = `<span class="font-bold">บันทึกล่าสุด:</span> ${item.log}`;
+            alert(`อัปเดตสถานะเป็น "${newStatus}" เรียบร้อยแล้ว`);
+            renderOfficerDashboard(); updateOfficerMapMarkers(); renderUserReportsList();
+        }
+    }
+</script>
+
+<script>
+// ===== KKU ROAD ALERT: COMPLETE FEATURE LAYER =====
+const OFFICER_ACCESS_CODE = "1111";
+let selectedSeverity = "ระดับ 2";
+
+function requestOfficerAccess(){
+    const m=document.getElementById('officer-password-modal');
+    const i=document.getElementById('officer-password-input');
+    const e=document.getElementById('officer-password-error');
+    if(!m || !i || !e) return;
+    m.classList.remove('hide'); m.classList.add('flex');
+    i.value=''; e.classList.add('hide');
+    setTimeout(()=>i.focus(),100);
+}
+function closeOfficerPassword(){
+    const m=document.getElementById('officer-password-modal');
+    if(!m) return;
+    m.classList.add('hide'); m.classList.remove('flex');
+}
+function verifyOfficerPassword(){
+    const i=document.getElementById('officer-password-input');
+    const e=document.getElementById('officer-password-error');
+    if(!i || !e) return;
+    if(i.value===OFFICER_ACCESS_CODE){
+        closeOfficerPassword();
+        selectRole('officer');
+    } else {
+        e.classList.remove('hide'); i.value=''; i.focus();
+    }
+}
+
+function selectSeverity(v){
+    selectedSeverity=v;
+    document.querySelectorAll('button[data-select-group="severity"]').forEach(b=>{
+        const selected=b.textContent.includes(v);
+        b.classList.toggle('is-selected',selected);
+        b.setAttribute('aria-selected',selected?'true':'false');
+    });
+}
+
+async function searchReportLocation(){
+    const input=document.getElementById('location-search-input');
+    const out=document.getElementById('location-search-result');
+    if(!input || !out) return;
+    const q=input.value.trim();
+    if(!q){out.textContent='กรุณาพิมพ์ชื่อสถานที่';return;}
+    out.textContent='กำลังค้นหาสถานที่...';
+    try{
+        const url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=th&q='+encodeURIComponent(q+' ขอนแก่น');
+        const res=await fetch(url,{headers:{'Accept':'application/json'}});
+        const data=await res.json();
+        if(!data.length){out.textContent='ไม่พบสถานที่ ลองพิมพ์ชื่ออาคาร ถนน หรือจุดสังเกตใกล้เคียง';return;}
+        const x=data[0],lat=parseFloat(x.lat),lon=parseFloat(x.lon);
+        updateReportCoords(lat,lon);
+        if(markerReportMini) markerReportMini.setLatLng([lat,lon]);
+        if(mapReportMini){mapReportMini.setView([lat,lon],17);setTimeout(()=>mapReportMini.invalidateSize(),150);}
+        if(mapModalPick){mapModalPick.setView([lat,lon],17);if(markerModalPick)markerModalPick.setLatLng([lat,lon]);}
+        out.textContent='พบ: '+x.display_name;
+    }catch(err){
+        console.error(err);
+        out.textContent='ค้นหาไม่สำเร็จ กรุณาเลือกตำแหน่งจากแผนที่';
+    }
+}
+
+function statusStep(s){
+    if(!s)return 1;
+    if(String(s).includes('เสร็จ'))return 4;
+    if(String(s).includes('ซ่อม'))return 3;
+    if(String(s).includes('รับ')||String(s).includes('ตรวจ'))return 2;
+    return 1;
+}
+function fileToDataURL(file){
+    return new Promise((resolve,reject)=>{
+        if(!file)return resolve('');
+        const r=new FileReader();
+        r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file);
+    });
+}
+function previewVisitImage(input,id){
+    if(input && input.files[0]){
+        const r=new FileReader();
+        r.onload=e=>{const img=document.getElementById(id);if(img){img.src=e.target.result;img.classList.remove('hidden');}};
+        r.readAsDataURL(input.files[0]);
+    }
+}
+
+async function postBackend(payload){
+    if(!GOOGLE_WEB_APP_URL || GOOGLE_WEB_APP_URL.includes('ใส่_URL')) return false;
+    try{
+        await fetch(GOOGLE_WEB_APP_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+        return true;
+    }catch(e){console.error('Backend error:',e);return false;}
+}
+
+async function inlineUpdateTicket(id,status){
+    activeTicketId=id;
+    const item=reportsData.find(r=>r.id===id);
+    if(!item)return;
+    item.status=status;
+    item.log=`เจ้าหน้าที่อัปเดตสถานะ: ${status}`;
+    await postBackend({action:'update',id:item.id,status:item.status,log:item.log});
+    renderOfficerDashboard();
+    updateOfficerMapMarkers();
+    renderUserReportsList();
+    setTimeout(()=>{
+        const detail=document.getElementById('ticket-detail-'+id);
+        const chevron=document.getElementById('ticket-chevron-'+id);
+        if(detail){detail.classList.remove('hide'); if(chevron)chevron.style.transform='rotate(180deg)';}
+    },0);
+}
+
+function inlineToggleVisit(id){
+    const el=document.getElementById('inline-visit-'+id);
+    if(el) el.classList.toggle('hide');
+}
+
+async function saveInlineSiteVisit(id){
+    activeTicketId=id;
+    const item=reportsData.find(r=>r.id===id);
+    if(!item)return;
+    const date=document.getElementById('inline-date-'+id)?.value||'';
+    const time=document.getElementById('inline-time-'+id)?.value||'';
+    const officer=(document.getElementById('inline-officer-'+id)?.value||'').trim();
+    const condition=(document.getElementById('inline-condition-'+id)?.value||'').trim();
+    const note=(document.getElementById('inline-visit-note-'+id)?.value||'').trim();
+    const completed=document.getElementById('inline-completed-'+id)?.value||'';
+    if(!condition && !note){alert('กรุณาระบุสภาพถนนหรือรายละเอียดการซ่อม');return;}
+    const before=await fileToDataURL(document.getElementById('inline-before-'+id)?.files[0]);
+    const after=await fileToDataURL(document.getElementById('inline-after-'+id)?.files[0]);
+    const displayDate=[date,time].filter(Boolean).join(' ');
+    item.visitDate=date; item.visitTime=time; item.officer=officer; item.roadCondition=condition;
+    item.visitNote=note; item.beforeImg=before||item.beforeImg||''; item.afterImg=after||item.afterImg||'';
+    item.repairResult=note||condition; item.repairDate=completed||displayDate; item.status=completed?'เสร็จสิ้น':'กำลังซ่อมแซม';
+    item.log=`เจ้าหน้าที่ลงพื้นที่ ${displayDate||'-'} โดย ${officer||'-'}: ${note||condition}`;
+    await postBackend({action:'site_visit',report_id:item.id,visit_date:date,visit_time:time,officer,repair_method:note,road_condition:condition,before_image:before,after_image:after,completed_date:completed,status:item.status});
+    renderOfficerDashboard(); updateOfficerMapMarkers(); renderUserReportsList();
+    setTimeout(()=>{
+        const detail=document.getElementById('ticket-detail-'+id);
+        const chevron=document.getElementById('ticket-chevron-'+id);
+        if(detail){detail.classList.remove('hide'); if(chevron)chevron.style.transform='rotate(180deg)';}
+    },0);
+    alert('บันทึกการลงพื้นที่และผลการซ่อมแล้ว');
+}
+
+async function inlineDeleteTicket(id){
+    activeTicketId=id;
+    const item=reportsData.find(r=>r.id===id);
+    if(!item)return;
+    if(!confirm(`ต้องการลบรายการ ${item.id} ใช่หรือไม่?\nข้อมูลจะถูกลบออกจากระบบ`))return;
+    const ok=await postBackend({action:'delete',id:item.id});
+    reportsData=reportsData.filter(r=>r.id!==id);
+    activeTicketId=null;
+    renderOfficerDashboard(); updateOfficerMapMarkers(); renderUserReportsList();
+    alert(ok?'ลบรายการเรียบร้อยแล้ว':'ลบออกจากหน้าจอแล้ว กรุณาตรวจสอบ Google Sheets');
+}
+
+async function saveSiteVisit(){
+    if(!activeTicketId)return;
+    const item=reportsData.find(r=>r.id===activeTicketId);
+    if(!item)return;
+    const note=(document.getElementById('visit-note')?.value||'').trim();
+    if(!note){alert('กรุณาระบุรายละเอียดการลงพื้นที่หรือการซ่อม');return;}
+    const before=await fileToDataURL(document.getElementById('visit-before')?.files[0]);
+    const after=await fileToDataURL(document.getElementById('visit-after')?.files[0]);
+    const now=new Date().toLocaleString('th-TH');
+    item.visitNote=note;
+    item.beforeImg=before||item.beforeImg||'';
+    item.afterImg=after||item.afterImg||'';
+    item.repairResult=note;
+    item.repairDate=now;
+    item.status='เสร็จสิ้น';
+    item.log=`เจ้าหน้าที่บันทึกการลงพื้นที่: ${note}`;
+    await postBackend({action:'site_visit',report_id:item.id,visit_date:now,visit_time:'',repair_method:note,road_condition:'ตรวจสอบและดำเนินการซ่อม',before_image:before,after_image:after,completed_date:now,status:'เสร็จสิ้น'});
+    renderOfficerDashboard();updateOfficerMapMarkers();renderUserReportsList();openOfficerDetail(item.id);
+    alert('บันทึกการลงพื้นที่และผลการซ่อมแล้ว');
+}
+
+
+function openUserStatusDetail(id){
+    const item=reportsData.find(r=>r.id===id);
+    if(!item)return;
+    document.querySelectorAll('.user-tab').forEach(el=>el.classList.add('hide'));
+    document.getElementById('page-user-status-detail').classList.remove('hide');
+    document.getElementById('page-user-status-detail').classList.add('flex');
+    document.getElementById('user-detail-id').innerText=item.id||'';
+    document.getElementById('user-detail-title').innerText=item.title||'แจ้งปัญหาถนน';
+    document.getElementById('user-detail-location').innerText=item.location||'ไม่ระบุสถานที่';
+    document.getElementById('user-detail-status').innerText=item.status||'ส่งเรื่องแล้ว';
+    document.getElementById('user-detail-desc').innerText=item.desc||'';
+    document.getElementById('user-detail-img').src=item.img||'';
+    document.getElementById('user-detail-message').innerText=item.log||'รอการอัปเดตจากเจ้าหน้าที่';
+    const steps=[
+      ['ส่งเรื่องแล้ว','ระบบได้รับแจ้งปัญหาเรียบร้อยแล้ว'],
+      ['หน่วยงานรับเรื่อง','เจ้าหน้าที่รับเรื่องเพื่อดำเนินการ'],
+      ['อยู่ระหว่างตรวจสอบ','เจ้าหน้าที่ตรวจสอบพื้นที่และวางแผนดำเนินการ'],
+      ['กำลังซ่อมแซม','อยู่ระหว่างดำเนินการแก้ไข'],
+      ['เสร็จสิ้น','ดำเนินการแก้ไขแล้ว']
+    ];
+    const level=String(item.status||'').includes('เสร็จ') ? 5 : statusStep(item.status);
+    document.getElementById('user-status-timeline').innerHTML=steps.map((st,i)=>{
+      const done=i<level;
+      const active=(i===level-1 && level<5);
+      const isFinal=(i===4 && level>=5);
+      const cls=(done?'done ':'')+(active?'active':'');
+      let note=done?'ดำเนินการแล้ว':'';
+      if(active) note=item.log||st[1];
+      if(isFinal) note=item.repairDate?`ดำเนินการแล้ว • ${item.repairDate}`:'ดำเนินการแล้ว';
+      return `<div class="user-status-step ${cls}"><p class="text-sm font-bold ${active||done?'text-[#163b53]':'text-gray-400'}">${st[0]}</p><p class="text-[11px] ${active?'text-gray-600':'text-gray-400'} mt-1">${note||st[1]}</p></div>`;
+    }).join('');
+    const box=document.getElementById('user-repair-result');
+    if(item.repairResult){
+      box.classList.remove('hide');
+      document.getElementById('user-repair-text').innerHTML=`<b>ผลการดำเนินงาน:</b> ${item.repairResult}${item.repairDate?`<br><b>วันที่:</b> ${item.repairDate}`:''}`;
+      const after=document.getElementById('user-repair-after');
+      if(item.afterImg){after.src=item.afterImg;after.classList.remove('hidden');}else{after.classList.add('hidden');}
+    }else{ box.classList.add('hide'); }
+}
+function closeUserStatusDetail(){
+    document.getElementById('page-user-status-detail').classList.add('hide');
+    document.getElementById('page-user-status-detail').classList.remove('flex');
+    switchUserTab('reports');
+}
+
+function filterOfficerTickets(type){
+    const all=reportsData.slice();
+    let filtered=all;
+    if(type==='new') filtered=all.filter(r=>r.status.includes('ใหม่')||r.status.includes('รับเรื่อง'));
+    if(type==='pending') filtered=all.filter(r=>r.status.includes('รอ')||r.status.includes('ข้อมูล')||r.status.includes('ตรวจ'));
+    if(type==='progress') filtered=all.filter(r=>r.status.includes('ซ่อม'));
+    if(type==='done') filtered=all.filter(r=>r.status.includes('เสร็จ'));
+    renderOfficerTicketList(filtered);
+    document.getElementById('officer-ticket-heading').innerText = type==='new'?'เรื่องใหม่':type==='pending'?'รอตรวจสอบ':type==='progress'?'กำลังดำเนินการ':'เสร็จสิ้น';
+    document.getElementById('officer-ticket-list').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function openSiteVisitQuick(){
+    if(!activeTicketId) return;
+    const modal=document.getElementById('site-visit-modal');
+    if(!modal) return;
+
+    const now=new Date();
+    const localDate = new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    const localTime = now.toTimeString().slice(0,5);
+
+    document.getElementById('visit-form-date').value = localDate;
+    document.getElementById('visit-form-time').value = localTime;
+    document.getElementById('visit-form-officer').value = '';
+    document.getElementById('visit-form-condition').value = '';
+    document.getElementById('visit-form-method').value = '';
+    document.getElementById('visit-form-completed').value = localDate;
+
+    ['visit-form-before','visit-form-after'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.value='';
+    });
+    document.getElementById('visit-form-before-name').textContent='No file chosen';
+    document.getElementById('visit-form-after-name').textContent='No file chosen';
+    document.getElementById('visit-form-before-preview').classList.add('hide');
+    document.getElementById('visit-form-after-preview').classList.add('hide');
+
+    modal.classList.remove('hide');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeSiteVisitForm(){
+    const modal=document.getElementById('site-visit-modal');
+    if(modal) modal.classList.add('hide');
+    document.body.classList.remove('overflow-hidden');
+}
+
+async function saveSiteVisitForm(){
+    if(!activeTicketId) return;
+    const item=reportsData.find(r=>r.id===activeTicketId);
+    if(!item) return;
+
+    const date=document.getElementById('visit-form-date').value;
+    const time=document.getElementById('visit-form-time').value;
+    const officer=document.getElementById('visit-form-officer').value.trim();
+    const condition=document.getElementById('visit-form-condition').value.trim();
+    const method=document.getElementById('visit-form-method').value.trim();
+    const completed=document.getElementById('visit-form-completed').value;
+
+    if(!officer){
+        alert('กรุณาระบุชื่อเจ้าหน้าที่');
+        document.getElementById('visit-form-officer').focus();
+        return;
+    }
+    if(!condition){
+        alert('กรุณาระบุสภาพถนนที่ตรวจพบ');
+        document.getElementById('visit-form-condition').focus();
+        return;
+    }
+    if(!method){
+        alert('กรุณาระบุวิธีการแก้ไข');
+        document.getElementById('visit-form-method').focus();
+        return;
+    }
+
+    const before=await fileToDataURL(document.getElementById('visit-form-before').files[0]);
+    const after=await fileToDataURL(document.getElementById('visit-form-after').files[0]);
+
+    item.visitDate=date;
+    item.visitTime=time;
+    item.officer=officer;
+    item.roadCondition=condition;
+    item.visitNote=method;
+    item.repairResult=method;
+    item.beforeImg=before||item.beforeImg||'';
+    item.afterImg=after||item.afterImg||'';
+    item.repairDate=completed;
+    item.status=completed ? 'เสร็จสิ้น' : 'กำลังซ่อมแซม';
+    item.log=`เจ้าหน้าที่ลงพื้นที่ ${date||'-'} ${time||''} โดย ${officer}: ${method}`;
+
+    await postBackend({
+        action:'site_visit',
+        report_id:item.id,
+        visit_date:date,
+        visit_time:time,
+        officer:officer,
+        repair_method:method,
+        road_condition:condition,
+        before_image:before,
+        after_image:after,
+        completed_date:completed,
+        status:item.status
+    });
+
+    closeSiteVisitForm();
+    renderOfficerDashboard();
+    updateOfficerMapMarkers();
+    renderUserReportsList();
+    alert('บันทึกการลงพื้นที่เรียบร้อยแล้ว');
+}
+
+async function deleteActiveReport(){
+    if(!activeTicketId)return;
+    const item=reportsData.find(r=>r.id===activeTicketId);
+    if(!item)return;
+    if(!confirm(`ต้องการลบรายการ ${item.id} ใช่หรือไม่?\nข้อมูลจะถูกลบออกจากระบบ`))return;
+    const ok=await postBackend({action:'delete',id:item.id});
+    reportsData=reportsData.filter(r=>r.id!==item.id);
+    activeTicketId=null;
+    closeOfficerDetail();
+    updateMapMarkers();updateOfficerMapMarkers();renderOfficerDashboard();renderUserReportsList();
+    alert(ok?'ลบรายการเรียบร้อยแล้ว':'ลบออกจากหน้าจอแล้ว กรุณาตรวจสอบ Google Sheets');
+}
+
+// Replace the base submit function only after the base script has loaded.
+const baseSubmitUserReport = submitUserReport;
+submitUserReport = async function(){
+    const input=document.getElementById('imageInput');
+    const preview=document.getElementById('imagePreview');
+    if(!input || (!input.files.length && !(preview && preview.src))){alert('กรุณาถ่ายรูปหลุมก่อนครับ');return;}
+    const desc=(document.getElementById('report-desc')?.value||'').trim();
+    const imgSrc=preview.src;
+    const locationText=document.getElementById('location-search-result')?.textContent||'';
+    const newReport={
+        id:'KKU-'+Math.floor(100000+Math.random()*900000),
+        title:desc?desc.substring(0,20):'พบหลุมบนถนน',
+        severity:selectedSeverity,
+        status:'หน่วยงานได้รับเรื่อง',
+        location:locationText.startsWith('พบ:')?locationText.substring(4):'บริเวณมหาวิทยาลัยขอนแก่น',
+        lat:selectedLat,lon:selectedLon,desc:desc||'แจ้งปัญหาผ่านแอป',img:imgSrc,log:'อัปโหลดข้อมูลแล้ว'
+    };
+    reportsData.unshift(newReport);
+    updateMapMarkers();updateOfficerMapMarkers();
+    removeImage();
+    document.getElementById('report-desc').value='';
+    await postBackend({action:'create',data:newReport});
+    alert('ส่งข้อมูลสำเร็จ! หมุดถูกเพิ่มลงระบบเรียบร้อยแล้ว');
+    switchUserTab('reports');
+};
+
+// Button states.
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(b&&!b.disabled)b.classList.add('is-pressed');});
+['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,e=>{const b=e.target.closest('button');if(b)b.classList.remove('is-pressed');}));
+document.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-select-group]');
+    if(!b||b.disabled)return;
+    const g=b.dataset.selectGroup;
+    document.querySelectorAll(`button[data-select-group="${g}"]`).forEach(x=>{x.classList.remove('is-selected');x.setAttribute('aria-selected','false');});
+    b.classList.add('is-selected');b.setAttribute('aria-selected','true');
+});
+
+document.addEventListener('DOMContentLoaded',()=>selectSeverity('ระดับ 2'));
+</script>
+
+</body>
+</html>

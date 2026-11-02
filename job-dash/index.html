@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ant Design Pro Analytics Dashboard | Live Database</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=-apple-system,BlinkMacSystemFont,Segoe+UI,Roboto,Helvetica+Neue,Arial,Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Prompt', sans-serif; }
+        .ant-sidebar {
+            width: 220px;
+            background-color: #001529;
+            box-shadow: 2px 0 8px 0 rgba(29,35,41,0.05);
+        }
+        .ant-card {
+            background: #ffffff;
+            border-radius: 2px;
+            border: 1px solid #f0f0f0;
+            box-shadow: 0 1px 2px -2px rgba(0,0,0,0.16), 0 3px 6px 0 rgba(0,0,0,0.12);
+        }
+        .ant-tab-btn.active {
+            color: #1890ff;
+            font-weight: 600;
+            border-bottom: 2px solid #1890ff;
+        }
+        .ant-period-btn.active {
+            color: #1890ff;
+            font-weight: 600;
+        }
+        .rank-badge-top {
+            background-color: #314659;
+            color: #ffffff;
+        }
+        .rank-badge-normal {
+            background-color: #f0f2f5;
+            color: rgba(0,0,0,0.65);
+        }
+    </style>
+</head>
+<body class="bg-[#f0f2f5] text-slate-800 min-h-screen flex">
+
+    <!-- 1. Ant Design Sidebar (220px, #001529) -->
+    <aside class="ant-sidebar flex-shrink-0 min-h-screen hidden md:flex flex-col text-white z-50">
+        <!-- Logo -->
+        <div class="h-16 flex items-center justify-center border-b border-white/10 px-4 gap-2">
+            <span class="text-xl font-black text-[#1890ff]">▲</span>
+            <span class="text-base font-semibold tracking-wide text-white">Ant Design Pro</span>
+        </div>
+
+        <!-- Menu Navigation -->
+        <nav class="p-3 space-y-1 text-sm flex-1">
+            <div class="flex items-center gap-3 px-3 py-2.5 rounded bg-[#1890ff] text-white font-medium cursor-pointer shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                <span>Dashboard</span>
+            </div>
+            <div class="flex items-center gap-3 px-3 py-2 rounded text-white/60 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <span>Analysis</span>
+            </div>
+            <div class="flex items-center gap-3 px-3 py-2 rounded text-white/60 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                <span>Monitor</span>
+            </div>
+            <div class="flex items-center gap-3 px-3 py-2 rounded text-white/60 hover:text-white hover:bg-white/5 transition cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                <span>Workplace</span>
+            </div>
+
+            <div class="pt-6 border-t border-white/10 mt-6">
+                <span class="text-[10px] uppercase font-bold text-white/40 px-3 tracking-wider">Database Layer</span>
+                <div class="flex items-center gap-2 px-3 py-1.5 text-xs text-white/70 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>SQLAlchemy Connected</span>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1 text-xs text-white/50">
+                    <span>SQLite / PostgreSQL</span>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- 2. Main Content Wrapper -->
+    <div class="flex-1 flex flex-col min-w-0">
+
+        <!-- Top Header Bar (64px, White) -->
+        <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-sm sticky top-0 z-40">
+            <!-- Left: Breadcrumb -->
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span>Home</span>
+                <span>/</span>
+                <span>Dashboard</span>
+                <span>/</span>
+                <span class="text-slate-800 font-semibold">Analysis</span>
+            </div>
+
+            <!-- Right: Live Pipeline Status Engine + Profile -->
+            <div class="flex items-center gap-4">
+                <!-- Status Pill -->
+                <div id="status-pill" class="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-bold text-emerald-700">LIVE DATA CONNECTED</span>
+                    <span class="text-[11px] text-slate-400" id="sync-timestamp">Last synced: Just now (1.4ms)</span>
+                </div>
+
+                <!-- User Avatar -->
+                <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+                    <div class="w-7 h-7 rounded-full bg-[#1890ff] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                        SM
+                    </div>
+                    <span class="text-xs font-medium text-slate-700">Serati Ma</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body Canvas (#f0f2f5) -->
+        <main class="p-6 space-y-6 flex-1">
+
+            <!-- ============================================== -->
+            <!-- ROW 1: 4 ANT DESIGN KPI SUMMARY CARDS          -->
+            <!-- ============================================== -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- KPI 1: Total Sales -->
+                <div class="ant-card p-5">
+                    <div class="flex justify-between items-center text-slate-500 text-xs">
+                        <span>Total Sales</span>
+                        <span class="cursor-pointer" title="Total sales revenue within the period">ⓘ</span>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-900 mt-2" id="kpi-sales">¥ 126,560</div>
+                    <div class="flex items-center gap-3 text-xs mt-3 text-slate-600">
+                        <span>WoW <strong class="text-rose-600" id="kpi-sales-wow">12% ↑</strong></span>
+                        <span>DoD <strong class="text-emerald-600" id="kpi-sales-dod">11% ↓</strong></span>
+                    </div>
+                    <div class="border-t border-slate-100 mt-3 pt-2 flex justify-between text-xs text-slate-500">
+                        <span>Daily Sales</span>
+                        <span class="font-semibold text-slate-700" id="kpi-sales-daily">¥ 12,423</span>
+                    </div>
+                </div>
+
+                <!-- KPI 2: Visits + Sparkline Area -->
+                <div class="ant-card p-5">
+                    <div class="flex justify-between items-center text-slate-500 text-xs">
+                        <span>Visits</span>
+                        <span class="cursor-pointer">ⓘ</span>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-900 mt-2" id="kpi-visits">8,846</div>
+                    <div class="mt-2 h-8">
+                        <div id="sparkline-visits" style="height: 36px;"></div>
+                    </div>
+                    <div class="border-t border-slate-100 mt-3 pt-2 flex justify-between text-xs text-slate-500">
+                        <span>Daily Visits</span>
+                        <span class="font-semibold text-slate-700" id="kpi-visits-daily">1,234</span>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Payments + Sparkline Bars -->
+                <div class="ant-card p-5">
+                    <div class="flex justify-between items-center text-slate-500 text-xs">
+                        <span>Payments</span>
+                        <span class="cursor-pointer">ⓘ</span>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-900 mt-2" id="kpi-payments">6,560</div>
+                    <div class="mt-2 h-8">
+                        <div id="sparkline-payments" style="height: 36px;"></div>
+                    </div>
+                    <div class="border-t border-slate-100 mt-3 pt-2 flex justify-between text-xs text-slate-500">
+                        <span>Conversion Rate</span>
+                        <span class="font-semibold text-slate-700" id="kpi-conversion">60%</span>
+                    </div>
+                </div>
+
+                <!-- KPI 4: Operational Effect + Progress Bar -->
+                <div class="ant-card p-5">
+                    <div class="flex justify-between items-center text-slate-500 text-xs">
+                        <span>Operational Effect</span>
+                        <span class="cursor-pointer">ⓘ</span>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-900 mt-2" id="kpi-op">78%</div>
+                    <div class="mt-4 mb-2">
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div id="bar-op" class="bg-[#1890ff] h-full" style="width: 78%;"></div>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-100 mt-3 pt-2 flex justify-between text-xs text-slate-500">
+                        <span>WoW <strong class="text-rose-600">12% ↑</strong></span>
+                        <span>DoD <strong class="text-emerald-600">11% ↓</strong></span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- ROW 2: SALES & VISITS TREND CARD               -->
+            <!-- ============================================== -->
+            <div class="ant-card p-6">
+                <!-- Header: Left Tabs & Right Controls -->
+                <div class="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 gap-4">
+                    <!-- Left: Sales vs Visits Tab Switcher -->
+                    <div class="flex items-center gap-6 text-sm">
+                        <button onclick="setMetricTab('Sales')" id="tab-sales" class="ant-tab-btn active pb-3 font-semibold text-[#1890ff]">Sales</button>
+                        <button onclick="setMetricTab('Visits')" id="tab-visits" class="ant-tab-btn pb-3 text-slate-500 hover:text-slate-700">Visits</button>
+                    </div>
+
+                    <!-- Right Controls: Period Buttons & Date Picker -->
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-4 text-xs text-slate-600 pr-2">
+                            <button onclick="setPeriod('All day')" id="btn-day" class="ant-period-btn hover:text-[#1890ff]">All day</button>
+                            <button onclick="setPeriod('All week')" id="btn-week" class="ant-period-btn hover:text-[#1890ff]">All week</button>
+                            <button onclick="setPeriod('All month')" id="btn-month" class="ant-period-btn active text-[#1890ff] font-bold">All month</button>
+                            <button onclick="setPeriod('All year')" id="btn-year" class="ant-period-btn hover:text-[#1890ff]">All year</button>
+                        </div>
+                        <!-- Date Picker -->
+                        <div class="flex items-center gap-1 bg-white border border-slate-300 rounded px-2.5 py-1 text-xs text-slate-700">
+                            <input type="date" id="date-start" value="2026-04-05" onchange="onDateChange()" class="border-none bg-transparent outline-none">
+                            <span>~</span>
+                            <input type="date" id="date-end" value="2026-10-05" onchange="onDateChange()" class="border-none bg-transparent outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content: Left Grouped Bar Chart (8 cols) | Right Ranking List (4 cols) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-5">
+                    
+                    <!-- Left: Store Sales Trend Chart (8 cols) -->
+                    <div class="lg:col-span-8">
+                        <h3 class="text-sm font-bold text-slate-800 mb-2" id="trend-title">Store Sales Trend</h3>
+                        <div id="chart-store-trend" style="height: 350px;"></div>
+                    </div>
+
+                    <!-- Right: Store Sales Ranking List (Top 1-7) (4 cols) -->
+                    <div class="lg:col-span-4">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4" id="ranking-title">Store Sales Ranking</h3>
+                        <div id="ranking-list" class="space-y-3">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Interactive Script -->
+    <script>
+        let currentTab = 'Sales';
+        let currentPeriod = 'All month';
+
+        // Master Ranking Data for Live UI
+        const rankingSales = [
+            { rank: 1, name: 'Gongwangfu Store No. 1', val: '323,234' },
+            { rank: 2, name: 'West Lake Flagship Shop', val: '298,450' },
+            { rank: 3, name: 'Sanlitun Taikoo Li Store', val: '265,890' },
+            { rank: 4, name: 'Nanjing Road Mega Store', val: '214,500' },
+            { rank: 5, name: 'Siam Paragon Flagship', val: '189,700' },
+            { rank: 6, name: 'Central World Mega Branch', val: '164,200' },
+            { rank: 7, name: 'Orchard Road Experience', val: '142,100' }
+        ];
+
+        const rankingVisits = [
+            { rank: 1, name: 'TMall & Shopee Official', val: '892,100' },
+            { rank: 2, name: 'TikTok Live Commerce Shop', val: '745,300' },
+            { rank: 3, name: 'Siam Paragon Flagship', val: '620,800' },
+            { rank: 4, name: 'West Lake Flagship Shop', val: '512,400' },
+            { rank: 5, name: 'Gongwangfu Store No. 1', val: '489,600' },
+            { rank: 6, name: 'Sanlitun Taikoo Li Store', val: '430,200' },
+            { rank: 7, name: 'Nanjing Road Mega Store', val: '395,000' }
+        ];
+
+        function renderRanking() {
+            const list = (currentTab === 'Sales') ? rankingSales : rankingVisits;
+            const container = document.getElementById('ranking-list');
+            container.innerHTML = '';
+            list.forEach(item => {
+                const isTop = item.rank <= 3;
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between text-xs py-1';
+                row.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-5 h-5 rounded-full flex items-center justify-center font-bold text-[11px] ${isTop ? 'rank-badge-top' : 'rank-badge-normal'}">${item.rank}</span>
+                        <span class="text-slate-700 truncate max-w-[180px]">${item.name}</span>
+                    </div>
+                    <span class="font-semibold text-slate-800">${item.val}</span>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function renderSparklines() {
+            // Visits Sparkline
+            Plotly.newPlot('sparkline-visits', [{
+                y: [600, 750, 800, 720, 910, 890, 1020, 950, 1100, 1150, 1234],
+                mode: 'lines',
+                line: { color: '#975fe4', width: 2, shape: 'spline' },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(151, 95, 228, 0.15)'
+            }], {
+                margin: { t: 0, b: 0, l: 0, r: 0 },
+                xaxis: { visible: false },
+                yaxis: { visible: false },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent'
+            }, { responsive: true, displayModeBar: false });
+
+            // Payments Sparkline
+            Plotly.newPlot('sparkline-payments', [{
+                y: [400, 480, 520, 490, 610, 590, 680, 620, 710, 750, 800],
+                type: 'bar',
+                marker: { color: '#1890ff', opacity: 0.85 }
+            }], {
+                margin: { t: 0, b: 0, l: 0, r: 0 },
+                xaxis: { visible: false },
+                yaxis: { visible: false },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent'
+            }, { responsive: true, displayModeBar: false });
+        }
+
+        function renderMainTrendChart() {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const multiplier = (currentTab === 'Sales') ? 1 : 2.5;
+
+            const offline = [650, 780, 890, 810, 950, 1100, 1050, 1200, 1150, 1250, 1300, 1420].map(v => v * multiplier);
+            const online  = [420, 510, 600, 580, 720, 850, 900, 1020, 1080, 1190, 1250, 1380].map(v => v * multiplier);
+
+            Plotly.newPlot('chart-store-trend', [
+                {
+                    x: months,
+                    y: offline,
+                    name: 'Offline Direct Store',
+                    type: 'bar',
+                    marker: { color: '#1890ff' }
+                },
+                {
+                    x: months,
+                    y: online,
+                    name: 'Online Flagship Store',
+                    type: 'bar',
+                    marker: { color: '#2fc25b' }
+                }
+            ], {
+                barmode: 'group',
+                margin: { t: 10, b: 30, l: 45, r: 15 },
+                xaxis: { showgrid: false, linecolor: '#f0f0f0' },
+                yaxis: { showgrid: true, gridcolor: '#f5f5f5', zeroline: false },
+                legend: { orientation: 'h', y: 1.12, x: 0.65 },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent'
+            }, { responsive: true, displayModeBar: false });
+        }
+
+        function setMetricTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-sales').className = (tab === 'Sales') ?
+                'ant-tab-btn active pb-3 font-semibold text-[#1890ff]' : 'ant-tab-btn pb-3 text-slate-500 hover:text-slate-700';
+            document.getElementById('tab-visits').className = (tab === 'Visits') ?
+                'ant-tab-btn active pb-3 font-semibold text-[#1890ff]' : 'ant-tab-btn pb-3 text-slate-500 hover:text-slate-700';
+
+            document.getElementById('trend-title').textContent = (tab === 'Sales') ? 'Store Sales Trend' : 'Store Visits Trend';
+            document.getElementById('ranking-title').textContent = (tab === 'Sales') ? 'Store Sales Ranking' : 'Store Visits Ranking';
+
+            renderMainTrendChart();
+            renderRanking();
+            updateTimestamp();
+        }
+
+        function setPeriod(period) {
+            currentPeriod = period;
+            ['day', 'week', 'month', 'year'].forEach(p => {
+                const btn = document.getElementById('btn-' + p);
+                if (btn) btn.className = 'ant-period-btn hover:text-[#1890ff]';
+            });
+            const activeMap = { 'All day': 'btn-day', 'All week': 'btn-week', 'All month': 'btn-month', 'All year': 'btn-year' };
+            const activeBtn = document.getElementById(activeMap[period]);
+            if (activeBtn) activeBtn.className = 'ant-period-btn active text-[#1890ff] font-bold';
+
+            if (period === 'All day') {
+                document.getElementById('kpi-sales').textContent = '¥ 14,230';
+                document.getElementById('kpi-visits').textContent = '1,280';
+                document.getElementById('kpi-payments').textContent = '840';
+            } else if (period === 'All week') {
+                document.getElementById('kpi-sales').textContent = '¥ 98,420';
+                document.getElementById('kpi-visits').textContent = '6,450';
+                document.getElementById('kpi-payments').textContent = '4,120';
+            } else if (period === 'All year') {
+                document.getElementById('kpi-sales').textContent = '¥ 1,485,200';
+                document.getElementById('kpi-visits').textContent = '98,400';
+                document.getElementById('kpi-payments').textContent = '62,800';
+            } else {
+                document.getElementById('kpi-sales').textContent = '¥ 126,560';
+                document.getElementById('kpi-visits').textContent = '8,846';
+                document.getElementById('kpi-payments').textContent = '6,560';
+            }
+
+            renderMainTrendChart();
+            updateTimestamp();
+        }
+
+        function onDateChange() {
+            updateTimestamp();
+            renderMainTrendChart();
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            document.getElementById('sync-timestamp').textContent = `Last synced: ${timeStr} (1.2ms)`;
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderSparklines();
+            renderMainTrendChart();
+            renderRanking();
+            setInterval(updateTimestamp, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+CUSTOM_STOP = {"show", "shows", "series", "season", "seasons", "episode", "episodes", "watch", "watched",
+               "watching", "tv", "really", "just", "like", "would", "could", "also", "get", "got", "make",
+               "made", "thing", "things", "even", "still", "much", "many", "lot", "one", "bit"}
+STOP = set(ENGLISH_STOP_WORDS) | CUSTOM_STOP
+
+SKIP = r"(?:a|an|the|very|so|too|really|that|even|as|be|been|being|is|are|was|were|do|does|did|have|has|had|to|just|much|all|quite)"
+NEG_RE = re.compile(rf"\b(?:not|no|never|hardly|barely)\s+(?:{SKIP}\s+)*([a-z]+)")
+
+def clean_review(text, title=""):
+    t = str(text).lower().replace("’", "'").replace("‘", "'")
+    t = re.sub(r"https?://\S+|www\.\S+", " ", t)                  # URL
+    t = re.sub(r"[*#_>`]+", " ", t)                               # markdown
+    if title:                                                     # ลบชื่อซีรีส์ของรีวิวนี้เท่านั้น
+        t = re.sub(r"(?<!\w)" + re.escape(str(title).lower()) + r"(?!\w)", " ", t)
+    t = (t.replace("can't", "can not").replace("cannot", "can not")
+           .replace("won't", "will not").replace("n't", " not"))   # ขยายคำย่อปฏิเสธ
+    t = re.sub(r"'(?:s|re|ve|ll|d|m)\b", " ", t)                  # 's 're 've 'll 'd 'm
+    t = NEG_RE.sub(lambda m: " " if m.group(1) in STOP else f" neg_{m.group(1)} ", t)
+    t = re.sub(r"[^a-z_\s]", " ", t)                              # เหลือตัวอักษรกับ _
+    return " ".join(w for w in t.split() if len(w) >= 3 and w not in STOP)
+
+df["clean"] = [clean_review(t, n) for t, n in zip(df["text"], df["name"])]
+n_before = len(df)
+df = df[df["clean"].str.strip() != ""].copy()
+print(f"ตัดรีวิวที่ว่างหลังล้างข้อความ {n_before - len(df)} -> เหลือ {len(df)}")
+
+# ตรวจด้วยตา: ตัวอย่างที่มีคำปฏิเสธ
+ex = df[df["clean"].str.contains("neg_")].sample(3, random_state=RANDOM_SEED)
+for _, r in ex.iterrows():
+    print(f"\n[{r['name']}] คะแนน {r['user_rating']:.0f}")
+    print("  ต้นฉบับ:", re.sub(r"\s+", " ", r["text"])[:160])
+    print("  หลังล้าง:", r["clean"][:160])
+
+
+
+def contrast(d, low_max=LOW_MAX, high_min=HIGH_MIN, min_docs=MIN_DOCS):
+    d = d[(d["user_rating"] <= low_max) | (d["user_rating"] >= high_min)].reset_index(drop=True)
+    y = (d["user_rating"] <= low_max).values                       # True = กลุ่มต่ำ
+
+    cv = CountVectorizer(binary=True, lowercase=False, min_df=min_docs, token_pattern=r"[a-z_]{3,}")
+    X = cv.fit_transform(d["clean"]).tocsr()
+    terms = cv.get_feature_names_out()
+
+    codes = pd.factorize(d["doc_id"])[0]                           # รหัสซีรีส์ของแต่ละรีวิว
+    S = csr_matrix((np.ones(len(d)), (codes, np.arange(len(d)))), shape=(codes.max() + 1, len(d)))
+
+    def group_stats(mask):
+        idx = np.where(mask)[0]
+        Xg, Sg = X[idx], S[:, idx]
+        docs = np.asarray(Xg.sum(axis=0)).ravel()                  # จำนวนรีวิวที่มีคำนี้
+        per_series = (Sg @ Xg).toarray()                           # ซีรีส์ x คำ
+        n_series = (per_series > 0).sum(axis=0)                    # จำนวนซีรีส์ที่ต่างกัน
+        top_share = per_series.max(axis=0) / np.maximum(docs, 1)   # สัดส่วนที่มาจากซีรีส์เดียว
+        return docs, n_series, top_share
+
+    a, sa, ta = group_stats(y)
+    b, sb, tb = group_stats(~y)
+    nl, nh = int(y.sum()), int((~y).sum())
+    lor = np.log((a + .5) / (nl - a + .5)) - np.log((b + .5) / (nh - b + .5))
+    se = np.sqrt(1 / (a + .5) + 1 / (nl - a + .5) + 1 / (b + .5) + 1 / (nh - b + .5))
+
+    out = pd.DataFrame({
+        "term": [("not " + t[4:]) if t.startswith("neg_") else t for t in terms],
+        "low_reviews": a, "high_reviews": b,
+        "low_pct": a / nl * 100, "high_pct": b / nh * 100,
+        "low_series": sa, "high_series": sb,
+        "low_top_series_%": ta * 100, "high_top_series_%": tb * 100,
+        "z": lor / se,
+    })
+    return out, nl, nh
+
+def pick_terms(res, side, k=15, min_docs=MIN_DOCS, min_series=MIN_SERIES):
+    if side == "low":
+        r = res[(res["low_reviews"] >= min_docs) & (res["low_series"] >= min_series) & (res["z"] > 0)]
+        return r.sort_values("z", ascending=False).head(k)
+    r = res[(res["high_reviews"] >= min_docs) & (res["high_series"] >= min_series) & (res["z"] < 0)]
+    return r.sort_values("z").head(k)
+
+res, n_low, n_high = contrast(df)
+low_terms, high_terms = pick_terms(res, "low"), pick_terms(res, "high")
+
+print(f"กลุ่มต่ำ n = {n_low} รีวิว | กลุ่มสูง n = {n_high} รีวิว | คำที่นำมาเทียบ {len(res)} คำ")
+cols = ["term", "low_reviews", "high_reviews", "low_pct", "high_pct", "low_series", "z"]
+print("\nคำที่พบมากกว่าในรีวิวคะแนนต่ำ:");  display(low_terms[cols].round(2).reset_index(drop=True))
+cols_h = ["term", "high_reviews", "low_reviews", "high_pct", "low_pct", "high_series", "z"]
+print("คำที่พบมากกว่าในรีวิวคะแนนสูง:");   display(high_terms[cols_h].round(2).reset_index(drop=True))
+
+
+from matplotlib import font_manager as fm
+THAI_FONTS = ["Tahoma", "Leelawadee UI", "Noto Sans Thai", "Sarabun", "TH Sarabun New", "Garuda", "Loma", "Tlwg Typo"]
+_avail = {f.name for f in fm.fontManager.ttflist}
+_thai = next((f for f in THAI_FONTS if f in _avail), None)
+if _thai:
+    plt.rcParams["font.family"] = _thai
+plt.rcParams.update({"axes.unicode_minus": False, "axes.spines.top": False, "axes.spines.right": False})
+T = (lambda th, en: th) if _thai else (lambda th, en: en)      # เลือกป้ายตามฟอนต์ที่มี
+
+C_LOW, C_HIGH, C_MID = "#C0504D", "#2A9D8F", "#B0B0B0"
+
+# ---------- ปรียบเทียบคำ ----------
+def draw_panel(ax, table, title, order_col):
+    t = table.head(10).iloc[::-1]                       # คำที่เด่นสุดอยู่บน
+    y = np.arange(len(t)); h = 0.38
+    ax.barh(y + h / 2, t["low_pct"], height=h, color=C_LOW, label=T(f"กลุ่มต่ำ (n={n_low})", f"Low (n={n_low})"))
+    ax.barh(y - h / 2, t["high_pct"], height=h, color=C_HIGH, label=T(f"กลุ่มสูง (n={n_high})", f"High (n={n_high})"))
+    ax.set_yticks(y)
+    ax.set_yticklabels([f"{w}  ({int(s)} {T('ซีรีส์', 'series')})" for w, s in zip(t["term"], t[order_col])], fontsize=10)
+    ax.set_title(title, fontsize=12, loc="left")
+    ax.set_xlabel(T("% ของรีวิวในกลุ่มที่มีคำนี้", "% of reviews in group containing the term"))
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5.6))
+draw_panel(axes[0], low_terms, T("คำที่พบมากกว่าในรีวิวคะแนนต่ำ", "More common in LOW-rated reviews"), "low_series")
+draw_panel(axes[1], high_terms, T("คำที่พบมากกว่าในรีวิวคะแนนสูง", "More common in HIGH-rated reviews"), "high_series")
+axes[0].legend(loc="lower right", fontsize=9)
+fig.suptitle(T("ผู้ชมที่ไม่พอใจกับผู้ชมที่พอใจใช้คำต่างกันอย่างไร (TMDB, ตัวเลขในวงเล็บ = จำนวนซีรีส์ที่พบคำนั้น)",
+               "How dissatisfied vs satisfied viewers differ in wording (TMDB; brackets = number of series)"), fontsize=12, x=0.01, ha="left")
+plt.tight_layout(); plt.show()
+
+
+# ---------- ทดสอบ 1: ความกระจุกตัว ----------
+chk = low_terms[["term", "low_reviews", "low_series", "low_top_series_%"]].copy()
+chk["กระจุกตัว"] = np.where(chk["low_top_series_%"] >= 50, "ระวัง (>=50% จากซีรีส์เดียว)", "ok")
+print("ความกระจุกตัวของคำเด่นในรีวิวคะแนนต่ำ:"); display(chk.round(1).reset_index(drop=True))
+
+# ---------- ทดสอบ 2: อ่านบริบทจริง (KWIC) ----------
+def show_examples(term, group="low", k=3, width=70):
+    base = term[4:] if term.startswith("not ") else term
+    sel = df[(df["group"] == group) & df["clean"].str.contains(rf"\b(?:neg_)?{re.escape(base)}\b")]
+    print(f"\n=== '{term}' ({group}) พบ {len(sel)} รีวิว ===")
+    for _, r in sel.sample(min(k, len(sel)), random_state=RANDOM_SEED).iterrows():
+        raw = re.sub(r"\s+", " ", r["text"].replace("’", "'"))
+        m = re.search(re.escape(base), raw, flags=re.I)
+        s = max(m.start() - width, 0) if m else 0
+        print(f"  [{r['name'][:24]} | {r['user_rating']:.0f}/10] ...{raw[s:s + 2 * width]}...")
+
+for w in low_terms["term"].head(3):          # ดู 3 คำแรกก่อน เปลี่ยนเป็นคำอื่นได้
+    show_examples(w, "low")
+
+# ---------- ทดสอบ 3: ความทนทานต่อการเปลี่ยนเกณฑ์ ----------
+main_top = set(low_terms["term"].head(15))
+pop_cut = df.drop_duplicates("doc_id")["popularity"].median()
+variants = {
+    "ต่ำ<=3 / สูง>=9": (df, 3, 9),
+    "ต่ำ<=4 / สูง>=8": (df, 4, 8),
+    "ต่ำ<=5 / สูง>=9": (df, 5, 9),
+    "เฉพาะซีรีส์ popularity สูงกว่ามัธยฐาน": (df[df["popularity"] >= pop_cut], 4, 9),
+}
+rows = []
+for name, (d_, lo_, hi_) in variants.items():
+    r_, nl_, nh_ = contrast(d_, lo_, hi_)
+    top_ = set(pick_terms(r_, "low", 15)["term"])
+    rows.append({"ตัวแปร": name, "n ต่ำ": nl_, "n สูง": nh_, "คำเด่น (ซ้อนกับผลหลัก จาก 15)": len(main_top & top_)})
+print("\nความทนทาน:"); display(pd.DataFrame(rows))
+
+top_l = low_terms.iloc[0]
+top_h = high_terms.iloc[0]
+print(f"กลุ่มต่ำ n = {n_low} รีวิว ({df[df['group']=='low']['doc_id'].nunique()} ซีรีส์) | กลุ่มสูง n = {n_high} รีวิว ({df[df['group']=='high']['doc_id'].nunique()} ซีรีส์)")
+print(f"คำเด่นฝั่งต่ำอันดับ 1: '{top_l['term']}' = {top_l['low_pct']:.1f}% ของรีวิวต่ำ vs {top_l['high_pct']:.1f}% ของรีวิวสูง | {int(top_l['low_series'])} ซีรีส์ | จากซีรีส์เดียวมากสุด {top_l['low_top_series_%']:.0f}%")
+print(f"คำเด่นฝั่งสูงอันดับ 1: '{top_h['term']}' = {top_h['high_pct']:.1f}% ของรีวิวสูง vs {top_h['low_pct']:.1f}% ของรีวิวต่ำ | {int(top_h['high_series'])} ซีรีส์")
+print(f"รีวิวที่ไม่มี user_rating (ไม่ได้ใช้): {n_norating} จาก {len(df_all)} ({n_norating / len(df_all) * 100:.1f}%)")
